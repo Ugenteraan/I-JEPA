@@ -62,6 +62,72 @@ class MultiBlockMaskCollator:
             w -= 1
 
         return h,w
+    
+    def constrain_mask_to_acceptable_regions(self, mask, acceptable_regions=None, minus_num_region=0):
+        '''The minus_num_region parameter will ensure that if the mask cannot be found in the acceptable regions, then we will reduce the number of acceptable regions (note that the acceptable regions contains more than one region. Therefore, we're reducing the number of the regions in the list). 
+        '''
+
+        num_of_regions = max(int(len(acceptable_regions) - minus_num_region), 0)
+
+        for i in range(num_of_regions):
+            mask *= acceptable_regions[i] #this code will ensure only the part of the regions are accepted in the mask. Whichever region with a value of 0 will be zero-ed in the mask as well.
+
+        return mask
+
+    def get_block_mask(self, block_size, acceptable_regions=None, num_tries=20):
+        '''Get a single block mask based on the block size and the given acceptable region (from the original patch image) if given.
+        '''
+
+        h, w = block_size
+
+        valid_mask = False
+        minus_num_region = 0
+
+        tries = num_tries #number of tries to find the valid mask. If it's unsuccessful, the acceptable_regions will be decreased.
+
+        while not valid_mask:
+
+            
+            #self.patch_height/width - h/w here is to find the "free" spots in the entire patch size.
+            top = torch.randint(0, self.patch_height - h, (1,))
+            left = torch.randint(0, self.patch_width - w, (1,))
+
+            mask = torch.zeros((self.patch_height, self.patch_width), dtype=torch.int32)
+
+            mask[top:top+h, left:left+w] = 1
+
+            #if the acceptable regions are provided, then the mask should only be applied to those regions. Anything outside the regions should be left 0.
+            if acceptable_regions is not None:
+                mask = self.constrain_mask_to_acceptable_regions(mask=mask,
+                                                                 acceptable_regions=acceptable_regions,
+                                                                 minus_num_region=minus_num_region)
+            #torch.nonzero returns a tensor containing the indices of all non-zero elements of input. 
+            mask = torch.nonzero(mask.flatten()) #we are interested in only the non-zero indices. Not the entire patch_height x patch_width tensor.
+
+            #since the mask might have been severely constrained if the acceptable regions were given, we need to make sure that the masks are biggeer than the minimum mask area we defined.
+            valid_mask = len(mask) > self.min_keep
+
+            if not valid_mask:
+
+                tries -= 1
+                
+                if tries == 0:
+
+                    minus_num_region += 1
+                    tries = num_tries
+
+                    print(f"Valid mask not found, decreasing the number of acceptable regions [{minus_num_region}]")
+                
+        mask = mask.squeeze()
+
+        #if we're generating masks for the target/predictor network, then we're gonna have to return the mask complements as well for it to be used for the context mask generator later.
+        #basically, we're doing the same thing as before except reversed. But keep in mind that this is a full mask (complement) not its indices.
+        mask_complement = torch.ones((self.patch_height, self.patch_width), dtype=torch.int32)
+        mask_complement[top:top+h, left:left+w] = 0 
+
+
+        return mask, mask_complement
+
 
 
     def __call__(self, batch_images):
@@ -74,9 +140,19 @@ class MultiBlockMaskCollator:
         num_batch = len(batch_images)
         
         #we want the prediction/target masks to have randomized height and width in every iteration.
-
         pred_target_mask_size = self.randomize_block_size(scale=self.pred_target_mask_scale, aspect_ratio=self.aspect_ratio) 
         context_mask_size = self.randomize_block_size(scale=self.context_mask_scale, aspect_ratio=(1.,1.)) #we maintain the 1 to 1 aspect ratio for context mask blocks. 
+
+        print(pred_target_mask_size, self.patch_height, self.patch_width)
+        for _ in range(num_batch):
+
+            masks_pred_target, masks_complement = [], []
+
+            for _ in range(self.num_pred_target_mask):
+                
+                mask, mask_complement = self.get_block_mask(pred_target_mask_size)
+        
+
 
 if __name__=='__main__':
 
