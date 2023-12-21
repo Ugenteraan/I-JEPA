@@ -1,6 +1,7 @@
 '''Mask Collator module that calculates the mask.
 '''
-
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 import math
 from multiprocessing import Value
@@ -140,6 +141,7 @@ class MultiBlockMaskCollator:
         2) Using the complement of the masks from #1, we find the context mask.
         3) 
         '''
+        print(batch_images)
 
         num_batch = len(batch_images)
         
