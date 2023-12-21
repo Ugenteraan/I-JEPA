@@ -74,7 +74,7 @@ class MultiBlockMaskCollator:
 
         return mask
 
-    def get_block_mask(self, block_size, acceptable_regions=None, num_tries=20):
+    def get_block_mask(self, block_size, acceptable_regions=None, num_tries=20, mask_complement_required=True):
         '''Get a single block mask based on the block size and the given acceptable region (from the original patch image) if given.
         '''
 
@@ -119,14 +119,18 @@ class MultiBlockMaskCollator:
                     print(f"Valid mask not found, decreasing the number of acceptable regions [{minus_num_region}]")
                 
         mask = mask.squeeze()
+        
+        if mask_complement_required:
+            #if we're generating masks for the target/predictor network, then we're gonna have to return the mask complements as well for it to be used for the context mask generator later.
+            #basically, we're doing the same thing as before except reversed. But keep in mind that this is a full mask (complement) not its indices.
+            mask_complement = torch.ones((self.patch_height, self.patch_width), dtype=torch.int32)
+            mask_complement[top:top+h, left:left+w] = 0 
 
-        #if we're generating masks for the target/predictor network, then we're gonna have to return the mask complements as well for it to be used for the context mask generator later.
-        #basically, we're doing the same thing as before except reversed. But keep in mind that this is a full mask (complement) not its indices.
-        mask_complement = torch.ones((self.patch_height, self.patch_width), dtype=torch.int32)
-        mask_complement[top:top+h, left:left+w] = 0 
 
-
-        return mask, mask_complement
+            return mask, mask_complement
+        
+        #if mask_complement not required.
+        return mask
 
 
 
@@ -143,14 +147,36 @@ class MultiBlockMaskCollator:
         pred_target_mask_size = self.randomize_block_size(scale=self.pred_target_mask_scale, aspect_ratio=self.aspect_ratio) 
         context_mask_size = self.randomize_block_size(scale=self.context_mask_scale, aspect_ratio=(1.,1.)) #we maintain the 1 to 1 aspect ratio for context mask blocks. 
 
-        print(pred_target_mask_size, self.patch_height, self.patch_width)
+        collated_masks_pred_target, collated_masks_context = [], []
         for _ in range(num_batch):
 
-            masks_pred_target, masks_complement = [], []
+            array_masks_pred_target, array_masks_complement = [], []
 
             for _ in range(self.num_pred_target_mask):
-                
-                mask, mask_complement = self.get_block_mask(pred_target_mask_size)
+                mask_pred_target, mask_complement = self.get_block_mask(pred_target_mask_size)
+                array_masks_pred_target.append(mask_pred_target)
+                array_masks_complement.append(mask_complement)
+
+            collated_masks_pred_target.append(array_masks_pred_target) #append all the masks for this element in the batch.
+
+            acceptable_regions = array_masks_complement
+            if self.allow_overlap:
+                acceptable_regions = None
+
+            array_masks_context = []
+            for _ in range(self.num_context_mask):
+
+                mask_context = self.get_block_mask(context_mask_size, acceptable_regions=acceptable_regions, mask_complement_required=False)
+                array_masks_context.append(mask_context)
+
+            collated_masks_context.append(array_masks_context)
+
+        collated_masks_pred_target = torch.utils.data.default_collate(collated_masks_pred_target)
+
+        collated_masks_context = torch.utils.data.default_collate(collated_masks_context)
+        
+        return collated_masks_pred_target, collated_masks_context
+
         
 
 
