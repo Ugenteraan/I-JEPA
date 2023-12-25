@@ -44,12 +44,15 @@ class DeepLakeDataset:
 
         deeplake_data = deeplake.load(self.deeplake_dataset, token=self.token)
 
-        dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms, 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
+        dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms(), 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
 
         return dataloader
 
 
 if __name__ == '__main__':
-    m = DeepLakeDataset(token=cred.DEEPLAKE_TOKEN, deeplake_dataset='hub://activeloop/imagenet-train', batch_size=2, shuffle=False)
+    m = DeepLakeDataset(token=cred.DEEPLAKE_TOKEN, deeplake_dataset='hub://activeloop/imagenet-train', batch_size=2, shuffle=False)()
 
-    print(m)
+    for i, train_data in enumerate(m):
+        print(train_data)
+
+        break

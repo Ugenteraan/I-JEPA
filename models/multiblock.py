@@ -106,7 +106,7 @@ class MultiBlockMaskCollator:
             mask = torch.nonzero(mask.flatten()) #we are interested in only the non-zero indices. Not the entire patch_height x patch_width tensor.
 
             #since the mask might have been severely constrained if the acceptable regions were given, we need to make sure that the masks are biggeer than the minimum mask area we defined.
-            valid_mask = len(mask) > self.min_keep
+            valid_mask = len(mask) > self.min_mask_length
 
             if not valid_mask:
 
@@ -135,19 +135,26 @@ class MultiBlockMaskCollator:
 
 
 
-    def __call__(self, batch_images):
+    def __call__(self, batch_data):
         '''Find #num_context_mask context mask(s) and #num_pred_target_mask prediction/target mask. 
         1) We first need to find the prediction/target masks. 
         2) Using the complement of the masks from #1, we find the context mask.
         3) 
         '''
-        print(batch_images)
+        
 
-        num_batch = len(batch_images)
+        num_batch = len(batch_data)
+
+        collated_batch_data_images = torch.utils.data.default_collate([x['images'] for x in batch_data]) #we return the original data here since masking processes does not require the data.
+        collated_batch_data_labels = torch.utils.data.default_collate([x['labels'] for x in batch_data])
         
         #we want the prediction/target masks to have randomized height and width in every iteration.
         pred_target_mask_size = self.randomize_block_size(scale=self.pred_target_mask_scale, aspect_ratio=self.aspect_ratio) 
         context_mask_size = self.randomize_block_size(scale=self.context_mask_scale, aspect_ratio=(1.,1.)) #we maintain the 1 to 1 aspect ratio for context mask blocks. 
+
+        #these variables are used to make sure the length of all the masks are the same so that the collate function works.
+        #REMEMBER, since we're randomizing the masks size (or length when flattened), there's bound to be inconsistencies.
+        min_keep_pred_target, min_keep_context = self.patch_height*self.patch_width, self.patch_height*self.patch_width
 
         collated_masks_pred_target, collated_masks_context = [], []
         for _ in range(num_batch):
@@ -158,6 +165,7 @@ class MultiBlockMaskCollator:
                 mask_pred_target, mask_complement = self.get_block_mask(pred_target_mask_size)
                 array_masks_pred_target.append(mask_pred_target)
                 array_masks_complement.append(mask_complement)
+                min_keep_pred = min(min_keep_pred_target, len(mask_pred_target))
 
             collated_masks_pred_target.append(array_masks_pred_target) #append all the masks for this element in the batch.
 
@@ -171,13 +179,17 @@ class MultiBlockMaskCollator:
                 mask_context = self.get_block_mask(context_mask_size, acceptable_regions=acceptable_regions, mask_complement_required=False)
                 array_masks_context.append(mask_context)
 
+                min_keep_context = min(min_keep_context, len(mask_context))
+
             collated_masks_context.append(array_masks_context)
 
+        collated_masks_pred_target = [[mask[:min_keep_pred] for mask in collated_masks] for collated_masks in collated_masks_pred_target]
         collated_masks_pred_target = torch.utils.data.default_collate(collated_masks_pred_target)
 
+        collated_masks_context = [[mask[:min_keep_context] for mask in collated_masks] for collated_masks in collated_masks_context]
         collated_masks_context = torch.utils.data.default_collate(collated_masks_context)
         
-        return collated_masks_pred_target, collated_masks_context
+        return collated_batch_data_images, collated_batch_data_labels, collated_masks_pred_target, collated_masks_context
 
         
 
