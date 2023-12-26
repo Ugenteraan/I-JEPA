@@ -25,8 +25,8 @@ class MultiBlockMaskCollator:
                  allow_overlap=False):
         
         self.patch_size = patch_size
-        self.patch_height = image_height // patch_size
-        self.patch_width = image_width // patch_size
+        self.num_patch_rows = image_height // patch_size #number of patches in the row dimension
+        self.num_patch_cols = image_width // patch_size #number of patches in the col dimension
         self.context_mask_scale = context_mask_scale
         self.pred_target_mask_scale = pred_target_mask_scale
         self.aspect_ratio = aspect_ratio
@@ -47,7 +47,7 @@ class MultiBlockMaskCollator:
         #here, we are randomizing the mask's scale. In other word, how many % we want to up/down scale the mask size in its entirety.
         min_s, max_s = scale
         mask_scale = min_s + _rand * (max_s - min_s) #this formula will ensure the scale is within the given min max of the scale parameter.
-        max_keep = int(self.patch_height * self.patch_width * mask_scale) #this calculation is needed to determine the height and width later.
+        max_keep = int(self.num_patch_rows * self.num_patch_cols * mask_scale) #this calculation is needed to determine the height and width later.
         
         min_asp_ratio, max_asp_ratio = aspect_ratio
         block_aspect_ratio = min_asp_ratio + _rand * (max_asp_ratio - min_asp_ratio) #again this formula will ensure that the block's aspect ratio is within the parameter range.
@@ -57,9 +57,9 @@ class MultiBlockMaskCollator:
         w = int(math.sqrt(max_keep / block_aspect_ratio))
         
         #if in any case the height and weight of the block exceeds the number of patches (in either dimension), the h and w will be reduced.
-        while h >= self.patch_height:
+        while h >= self.num_patch_rows:
             h -= 1
-        while w >= self.patch_width:
+        while w >= self.num_patch_cols:
             w -= 1
 
         return h,w
@@ -89,11 +89,11 @@ class MultiBlockMaskCollator:
         while not valid_mask:
 
             
-            #self.patch_height/width - h/w here is to find the "free" spots in the entire patch size.
-            top = torch.randint(0, self.patch_height - h, (1,))
-            left = torch.randint(0, self.patch_width - w, (1,))
+            #self.num_patch_rows/width - h/w here is to find the "free" spots in the entire patch size.
+            top = torch.randint(0, self.num_patch_rows - h, (1,))
+            left = torch.randint(0, self.num_patch_cols - w, (1,))
 
-            mask = torch.zeros((self.patch_height, self.patch_width), dtype=torch.int32)
+            mask = torch.zeros((self.num_patch_rows, self.num_patch_cols), dtype=torch.int32)
 
             mask[top:top+h, left:left+w] = 1
 
@@ -103,7 +103,7 @@ class MultiBlockMaskCollator:
                                                                  acceptable_regions=acceptable_regions,
                                                                  minus_num_region=minus_num_region)
             #torch.nonzero returns a tensor containing the indices of all non-zero elements of input. 
-            mask = torch.nonzero(mask.flatten()) #we are interested in only the non-zero indices. Not the entire patch_height x patch_width tensor.
+            mask = torch.nonzero(mask.flatten()) #we are interested in only the non-zero indices. Not the entire num_patch_rows x num_patch_cols tensor.
 
             #since the mask might have been severely constrained if the acceptable regions were given, we need to make sure that the masks are biggeer than the minimum mask area we defined.
             valid_mask = len(mask) > self.min_mask_length
@@ -124,7 +124,7 @@ class MultiBlockMaskCollator:
         if mask_complement_required:
             #if we're generating masks for the target/predictor network, then we're gonna have to return the mask complements as well for it to be used for the context mask generator later.
             #basically, we're doing the same thing as before except reversed. But keep in mind that this is a full mask (complement) not its indices.
-            mask_complement = torch.ones((self.patch_height, self.patch_width), dtype=torch.int32)
+            mask_complement = torch.ones((self.num_patch_rows, self.num_patch_cols), dtype=torch.int32)
             mask_complement[top:top+h, left:left+w] = 0 
 
 
@@ -144,7 +144,6 @@ class MultiBlockMaskCollator:
         
         
         num_batch = len(batch_data)
-        print("num of batch:", num_batch)
 
         collated_batch_data_images = torch.utils.data.default_collate([x['images'] for x in batch_data]) #we return the original data here since masking processes does not require the data.
         collated_batch_data_labels = torch.utils.data.default_collate([x['labels'] for x in batch_data])
@@ -155,7 +154,7 @@ class MultiBlockMaskCollator:
 
         #these variables are used to make sure the length of all the masks are the same so that the collate function works.
         #REMEMBER, since we're randomizing the masks size (or length when flattened), there's bound to be inconsistencies.
-        min_keep_pred_target, min_keep_context = self.patch_height*self.patch_width, self.patch_height*self.patch_width
+        min_keep_pred_target, min_keep_context = self.num_patch_rows*self.num_patch_cols, self.num_patch_rows*self.num_patch_cols
 
         batch_masks_pred_target, batch_masks_context = [], []
         for _ in range(num_batch):
