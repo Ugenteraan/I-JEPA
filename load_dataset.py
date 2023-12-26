@@ -43,7 +43,8 @@ class DeepLakeDataset:
 
 
         deeplake_data = deeplake.load(self.deeplake_dataset, token=self.token)
-
+        
+        #dataloader = deeplake_data.pytorch(batch_size=self.batch_size, shuffle=self.shuffle, num_workers=1, transform={'images':self.image_transforms(), 'labels':None}, collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
         dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms(), 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
 
         return dataloader
