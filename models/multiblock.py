@@ -7,7 +7,7 @@ import math
 from multiprocessing import Value
 
 
-class MultiBlockMaskCollator:
+class MultiBlockMaskCollator(object):
     '''This module will be supplied in the collate parameter during the initialization of dataloader.
     '''
 
@@ -24,6 +24,7 @@ class MultiBlockMaskCollator:
                  min_mask_length=4,
                  allow_overlap=False):
         
+        super(MultiBlockMaskCollator, self).__init__()
         self.patch_size = patch_size
         self.num_patch_rows = image_height // patch_size #number of patches in the row dimension
         self.num_patch_cols = image_width // patch_size #number of patches in the col dimension
@@ -36,13 +37,25 @@ class MultiBlockMaskCollator:
         self.allow_overlap = allow_overlap
         self._itr_counter = Value('i', -1)
     
-    def randomize_block_size(self, scale, aspect_ratio, torch_seed=None):
+    def seed_step(self):
+        '''This module will ensure that the value of the seed increases consistently across ALL workers.
+        '''
+        i = self._itr_counter
+        
+        #In my understanding, using get_lock() will ensure that the operations performed AFTER it is done on the shared resource i.e. on all woekers. 
+        with i.get_lock():
+            i.value +=1
+            v = i.value
+
+        return v
+
+    def randomize_block_size(self, scale, aspect_ratio, torch_generator=None):
         '''Given the scale and aspect ratio, we randomly generte a height and width for the mask blocks.
            The scale is responsible for determining how small/big the mask is going to be while the aspect ratio is responsible for the height and width ratio of the mask block.
 
         '''
 
-        _rand = torch.rand(1, generator=torch_seed).item() 
+        _rand = torch.rand(1, generator=torch_generator).item() 
         
         #here, we are randomizing the mask's scale. In other word, how many % we want to up/down scale the mask size in its entirety.
         min_s, max_s = scale
@@ -109,7 +122,6 @@ class MultiBlockMaskCollator:
             valid_mask = len(mask) > self.min_mask_length
 
             if not valid_mask:
-
                 tries -= 1
                 
                 if tries == 0:
@@ -139,7 +151,6 @@ class MultiBlockMaskCollator:
         '''Find #num_context_mask context mask(s) and #num_pred_target_mask prediction/target mask. 
         1) We first need to find the prediction/target masks. 
         2) Using the complement of the masks from #1, we find the context mask.
-        3) 
         '''
         
         
@@ -147,10 +158,18 @@ class MultiBlockMaskCollator:
 
         collated_batch_data_images = torch.utils.data.default_collate([x['images'] for x in batch_data]) #we return the original data here since masking processes does not require the data.
         collated_batch_data_labels = torch.utils.data.default_collate([x['labels'] for x in batch_data])
+
+        #before we randomize anything, we need to remember that if multiple workers are accessing this module, then the random values would be different for the masks on the same image!
+        #hence, we have to use the torch generator that uses a same seed value across the workers for the same image.
+        seed = self.seed_step()
+
+        torch_generator = torch.Generator()
+        torch_generator.manual_seed(seed) #feed the manual seed to the generator.
+
         
         #we want the prediction/target masks to have randomized height and width in every iteration.
-        pred_target_mask_size = self.randomize_block_size(scale=self.pred_target_mask_scale, aspect_ratio=self.aspect_ratio) 
-        context_mask_size = self.randomize_block_size(scale=self.context_mask_scale, aspect_ratio=(1.,1.)) #we maintain the 1 to 1 aspect ratio for context mask blocks. 
+        pred_target_mask_size = self.randomize_block_size(scale=self.pred_target_mask_scale, aspect_ratio=self.aspect_ratio, torch_generator=torch_generator) 
+        context_mask_size = self.randomize_block_size(scale=self.context_mask_scale, aspect_ratio=(1.,1.), torch_generator=torch_generator) #we maintain the 1 to 1 aspect ratio for context mask blocks. 
 
         #these variables are used to make sure the length of all the masks are the same so that the collate function works.
         #REMEMBER, since we're randomizing the masks size (or length when flattened), there's bound to be inconsistencies.

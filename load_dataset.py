@@ -15,7 +15,7 @@ class DeepLakeDataset:
     '''
 
 
-    def __init__(self, token, deeplake_dataset, batch_size, shuffle, mode='train'):
+    def __init__(self, token, collate_func, deeplake_dataset, batch_size, shuffle, mode='train'):
         '''Init parameters.
         '''
 
@@ -24,10 +24,10 @@ class DeepLakeDataset:
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.mode = mode
+        self.collate_func = collate_func
 
     @staticmethod
     def image_transforms():
-
         return transforms.Compose([
             # transforms.ToPILImage(),
             transforms.Resize((224, 224)),
@@ -45,13 +45,13 @@ class DeepLakeDataset:
         deeplake_data = deeplake.load(self.deeplake_dataset, token=self.token)
         
         #dataloader = deeplake_data.pytorch(batch_size=self.batch_size, shuffle=self.shuffle, num_workers=1, transform={'images':self.image_transforms(), 'labels':None}, collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
-        dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms(), 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
+        dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms(), 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(num_workers=2, collate_fn=self.collate_func, decode_method={'images':'pil'})
 
         return dataloader
 
 
 if __name__ == '__main__':
-    m = DeepLakeDataset(token=cred.DEEPLAKE_TOKEN, deeplake_dataset='hub://activeloop/imagenet-train', batch_size=2, shuffle=False)()
+    m = DeepLakeDataset(token=cred.DEEPLAKE_TOKEN, collate_func=MultiBlockMaskCollator(), deeplake_dataset='hub://activeloop/imagenet-train', batch_size=2, shuffle=False)()
 
     for i, train_data in enumerate(m):
         print(train_data)

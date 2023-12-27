@@ -5,11 +5,14 @@ import torch
 import cv2
 import numpy as np
 from load_dataset import DeepLakeDataset
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 import cred
 from utils import apply_masks_over_image_patches
-
+from models.multiblock import MultiBlockMaskCollator
+from dataload_manual import LoadDataset
+from torchvision import transforms
 
 class VisualizeData:
 
@@ -21,7 +24,10 @@ class VisualizeData:
         self.num_figs = num_figs
         self.fig_savepath = fig_savepath
         self.visualize_batch_size = visualize_batch_size
-        self.dataloader = deeplake_module(token=deeplake_token, deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
+        #self.dataloader = deeplake_module(token=deeplake_token, collate_func=MultiBlockMaskCollator(), deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
+        self.load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
+        self.dataloader = DataLoader(self.load_dataset_module, batch_size=visualize_batch_size, shuffle=visualize_shuffle, num_workers=8, collate_fn=MultiBlockMaskCollator())
+
    
     def plot_images(self, fig, axes, row_idx, original_image, masked_pred_images, masked_context_image):
         '''Plot images using matplotlib.
@@ -70,15 +76,16 @@ class VisualizeData:
             plt.savefig(f'{self.fig_savepath}/visualization - {idx}.jpg')
 
             if idx == self.num_figs:
-                break
-        
-            
-            
-            
+                break        
 
 
 
 if __name__ == '__main__':
-    vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=5, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=10, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
+    import time
+
+    start_ = time.time()
+    vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=5, visualize_shuffle=True, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=20, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
 
     print(vd())
+    end_ = time.time()
+    print("Time takes : ", end_ - start_)
