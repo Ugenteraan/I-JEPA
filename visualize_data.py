@@ -4,19 +4,19 @@
 import torch
 import cv2
 import numpy as np
-from load_dataset import DeepLakeDataset
+from deeplake_dataset import DeepLakeDataset
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 import cred
 from utils import apply_masks_over_image_patches
 from models.multiblock import MultiBlockMaskCollator
-from dataload_manual import LoadDataset
+from load_dataset import LoadDataset
 from torchvision import transforms
 
 class VisualizeData:
 
-    def __init__(self, deeplake_module, deeplake_dataset, visualize_batch_size, visualize_shuffle, deeplake_token, image_height, image_width, patch_size, num_figs, fig_savepath):
+    def __init__(self, visualize_batch_size=6, num_workers=4, visualize_shuffle=False, image_height=224, image_width=224, patch_size=14, num_figs=10, fig_savepath='./figures/', deeplake_module=None, deeplake_dataset=None, deeplake_token=None, dataset_folder_path=None, collate_func):
 
         self.image_height = image_height
         self.image_width = image_width
@@ -24,9 +24,15 @@ class VisualizeData:
         self.num_figs = num_figs
         self.fig_savepath = fig_savepath
         self.visualize_batch_size = visualize_batch_size
-        #self.dataloader = deeplake_module(token=deeplake_token, collate_func=MultiBlockMaskCollator(), deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
-        self.load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
-        self.dataloader = DataLoader(self.load_dataset_module, batch_size=visualize_batch_size, shuffle=visualize_shuffle, num_workers=8, collate_fn=MultiBlockMaskCollator())
+
+    
+        self.dataloader = None
+        if deeplake_module is not None and deeplake_dataset is not None and deeplake_token is not None:
+            #multiple number of workers seems to be throwing errors when using Deeplake's dataloader.
+            self.dataloader = deeplake_module(token=deeplake_token, collate_func=collate_func, deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
+        else:
+            self.load_dataset_module = LoadDataset(dataset_folder_path=dataset_folder_path, transform=transforms.ToTensor())
+            self.dataloader = DataLoader(self.load_dataset_module, batch_size=visualize_batch_size, shuffle=visualize_shuffle, num_workers=num_workers, collate_fn=collate_func)
 
    
     def plot_images(self, fig, axes, row_idx, original_image, masked_pred_images, masked_context_image):
@@ -84,7 +90,8 @@ if __name__ == '__main__':
     import time
 
     start_ = time.time()
-    vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=5, visualize_shuffle=True, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=20, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
+    #vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=6, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
+    vd = VisualizeData(visualize_batch_size=6, visualize_shuffle=False, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/', collate_func=MultiBlockMaskCollator())
 
     print(vd())
     end_ = time.time()

@@ -1,59 +1,111 @@
-'''Dataset loading module.
-'''
-import os, sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-import deeplake
+import os
+import glob
+import cv2
+import torch
+from torch.utils import data
+from torch.utils.data import Dataset, dataset, DataLoader
 from torchvision import transforms
 
-from models.multiblock import MultiBlockMaskCollator
-import cred
 
-class DeepLakeDataset:
-    '''Load desired dataset from deeplake API.
+
+
+class LoadDataset(Dataset):
+    '''Loads the dataset from the given path.
     '''
 
-
-    def __init__(self, token, collate_func, deeplake_dataset, batch_size, shuffle, mode='train'):
-        '''Init parameters.
+    def __init__(self, dataset_folder_path, image_size=224, image_depth=3, train=True, transform=None):
+        '''Parameter Init.
         '''
 
-        self.token = token
-        self.deeplake_dataset = deeplake_dataset
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.mode = mode
-        self.collate_func = collate_func
+        assert not dataset_folder_path is None, "Path to the dataset folder must be provided!"
 
-    @staticmethod
-    def image_transforms():
-        return transforms.Compose([
-            # transforms.ToPILImage(),
-            transforms.Resize((224, 224)),
-#            transforms.RandomHorizontalFlip(),
-#            transforms.ColorJitter(brightness=cfg.COLOR_JITTER_BRIGHTNESS, hue=cfg.COLOR_JITTER_HUE),
-#            transforms.RandomAffine(degrees=cfg.RANDOM_AFFINE_ROTATION_RANGE, translate=cfg.RANDOM_AFFINE_TRANSLATE_RANGE, scale=cfg.RANDOM_AFFINE_SCALE_RANGE),
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1))
-        ])
+        self.dataset_folder_path = dataset_folder_path
+        self.transform = transform
+        self.image_size = image_size
+        self.image_depth = image_depth
+        self.train = train
+        self.classes = sorted(self.get_classnames())
+        self.image_path_label = self.read_folder()
 
 
-    def __call__(self):
+
+    def get_classnames(self):
+        '''Returns the name of the classes in the dataset.
+        '''
+        return os.listdir(f"{self.dataset_folder_path.rstrip('/')}/train/" )
 
 
-        deeplake_data = deeplake.load(self.deeplake_dataset, token=self.token)
-        
-        #dataloader = deeplake_data.pytorch(batch_size=self.batch_size, shuffle=self.shuffle, num_workers=1, transform={'images':self.image_transforms(), 'labels':None}, collate_fn=MultiBlockMaskCollator(), decode_method={'images':'pil'})
-        dataloader = deeplake_data.dataloader().transform({'images':self.image_transforms(), 'labels':None}).batch(self.batch_size).shuffle(self.shuffle).pytorch(num_workers=2, collate_fn=self.collate_func, decode_method={'images':'pil'})
+    def read_folder(self):
+        '''Reads the folder for the images with their corresponding label (foldername).
+        '''
 
-        return dataloader
+        image_path_label = []
+
+        if self.train:
+            folder_path = f"{self.dataset_folder_path.rstrip('/')}/train/"
+        else:
+            folder_path = f"{self.dataset_folder_path.rstrip('/')}/test/"
+
+        for x in glob.glob(folder_path + "**", recursive=True):
+
+            if not x.endswith('jpg'):
+                continue
+
+            class_idx = self.classes.index(x.split('/')[-2])
+            image_path_label.append((x, int(class_idx)))
+
+        return image_path_label
+
+
+    def __len__(self):
+        '''Returns the total size of the data.
+        '''
+        return len(self.image_path_label)
+        return 400
+
+    def __getitem__(self, idx):
+        '''Returns a single image and its corresponding label.
+        '''
+
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image, label = self.image_path_label[idx]
+
+        if self.image_depth == 1:
+            image = cv2.imread(image, 0)
+        else:
+            image = cv2.imread(image)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        image = cv2.resize(image, (self.image_size, self.image_size))
+
+        if self.transform:
+            image = self.transform(image)
+
+        return {
+            'images': image,
+            'labels': label
+        }
 
 
 if __name__ == '__main__':
-    m = DeepLakeDataset(token=cred.DEEPLAKE_TOKEN, collate_func=MultiBlockMaskCollator(), deeplake_dataset='hub://activeloop/imagenet-train', batch_size=2, shuffle=False)()
 
-    for i, train_data in enumerate(m):
-        print(train_data)
+        import time
 
-        break
+        load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
+
+        dataloader = DataLoader(load_dataset_module, batch_size=1000, shuffle=False, num_workers=0)
+        
+        start_ = time.time() 
+        for idx, data in enumerate(dataloader):
+
+            print(data['labels'])
+
+            if idx == 10000: 
+                break
+        end_ = time.time()
+
+        print("Time taken: ", end_ - start_)

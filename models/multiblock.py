@@ -39,6 +39,9 @@ class MultiBlockMaskCollator(object):
     
     def seed_step(self):
         '''This module will ensure that the value of the seed increases consistently across ALL workers.
+           In my understanding, when multiple workers are used in the dataloader, each worker will be initialized with different random numbers. This might produce inconsistent behaviours.
+           Therefore, to remedy this, we are using the seed here to ensure that the value of the generated number is consistent across the workers for a particular iteration. 
+           However, when I tested the script with AND without the seed step, there were no noticeable inconsistencies. Perhaps it's due to the lower number of batch and data limit that I used for the testing. Regardless, this function seems to be safe to be around.
         '''
         i = self._itr_counter
         
@@ -195,6 +198,7 @@ class MultiBlockMaskCollator(object):
             array_masks_context = []
             for _ in range(self.num_context_mask):
 
+                #the idea here is to use a bigger mask scale than the predcit/target mask and constrain it to the acceptable regions. 
                 mask_context = self.get_block_mask(context_mask_size, acceptable_regions=acceptable_regions, mask_complement_required=False)
                 array_masks_context.append(mask_context)
 
@@ -212,16 +216,6 @@ class MultiBlockMaskCollator(object):
         return collated_batch_data_images, collated_batch_data_labels, collated_masks_pred_target, collated_masks_context
 
         
-
-
-if __name__=='__main__':
-
-    m = MultiBlockMaskCollator()
-    print(m(batch_images=[1]))
-
-
-
-
 
 
 
