@@ -16,7 +16,7 @@ from torchvision import transforms
 
 class VisualizeData:
 
-    def __init__(self, visualize_batch_size=6, num_workers=4, visualize_shuffle=False, image_height=224, image_width=224, patch_size=14, num_figs=10, fig_savepath='./figures/', deeplake_module=None, deeplake_dataset=None, deeplake_token=None, dataset_folder_path=None, collate_func):
+    def __init__(self, visualize_batch_size=6, num_workers=4, visualize_shuffle=False, image_height=224, image_width=224, patch_size=14, num_figs=10, fig_savepath='./figures/', deeplake_module=None, deeplake_dataset=None, deeplake_token=None, dataset_folder_path=None, collate_func=None):
 
         self.image_height = image_height
         self.image_width = image_width
@@ -87,12 +87,6 @@ class VisualizeData:
 
 
 if __name__ == '__main__':
-    import time
-
-    start_ = time.time()
     #vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=6, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
-    vd = VisualizeData(visualize_batch_size=6, visualize_shuffle=False, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/', collate_func=MultiBlockMaskCollator())
+    vd = VisualizeData(visualize_batch_size=6, visualize_shuffle=False, num_workers=8, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
 
-    print(vd())
-    end_ = time.time()
-    print("Time takes : ", end_ - start_)
