@@ -4,8 +4,13 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import torch.nn as nn
+import torch
+
 from .patch_embedding import PatchEmbedding
 from .positional_encoder import PositionalEncoder
+from utils import apply_masks_over_embedded_patches
+
 
 
 class VisionTransformerForEncoder(nn.Module):
@@ -39,6 +44,17 @@ class VisionTransformerForEncoder(nn.Module):
         #patch embed the images.
         x = self.patch_embed(x)
 
-        pos_embed = PositionalEncoder(token_length=x.size(1), output_dim=x.size(2), n=10000, device=self.device)
+        #generate the positional embedding tokens
+        pos_embed_module = PositionalEncoder(token_length=x.size(1), output_dim=x.size(2), n=10000, device=self.device)
+        pos_embedding_tensor = pos_embed_module()
+        
+        #concat the pos embedding tensor the patch embedding.
+        x = x + pos_embedding_tensor
+
+        if masks is not None:
+            x = apply_masks_over_embedded_patches(x, masks)
+
+        return x
+        
         
 

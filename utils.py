@@ -6,6 +6,34 @@ import torch
 import numpy as np
 
 
+def apply_masks_over_embedded_patches(x, masks):
+    '''
+    x: tensor [batch size, num patches, embedding dim]
+    masks: LIST of tensors containing indices of patches (2nd dimension of x) to keep
+
+    returns the image patches at the indices of the masks only. 
+    e.g. [batch size, 3, embedding dim]. 3 is the total number of indices in one of the mask in the masks list.
+    '''
+
+
+    all_masked_patch_embeddings = []
+    
+    #official i-jepa code only takes in 1 x and 1 mask batch at a time.
+    for idx, m in enumerate(masks):
+        #mask is of size [batch size, index of patch]
+        mask_keep = m.unsqueeze(-1).repeat(1, 1, x.size(-1)) #Reshape the mask tensor to be compatible with the given input tensor.
+        print(mask_keep.size())
+
+        print(x.size())
+        
+        #collect all the tensors in dimension 1 (number of patch dim) based on the given mask and append to the list.
+        all_masked_patch_embeddings += [torch.gather(x, dim=1, index=mask_keep)]
+    
+    return torch.cat(all_masked_patch_embeddings, dim=0)
+
+
+
+    
 
 def apply_masks_over_image_patches(image, patch_size, image_height, image_width, masks_array, negate_mask=True):
     '''Applies patched masks on the original image and returns the resulting image.
