@@ -213,7 +213,12 @@ class MultiBlockMaskCollator(object):
         collated_masks_context = [torch.stack([m[:min_keep_context] for m in mc]) for mc in batch_masks_context]
         collated_masks_context = torch.stack(collated_masks_context)
         
-        return collated_batch_data_images, collated_batch_data_labels, collated_masks_pred_target, collated_masks_context
+        return {
+                'collated_batch_data_images':colalted_batch_data_images,
+                'collated_batch_data_labels': collated_batch_data_labels,
+                'collated_masks_pred_target':collated_masks_pred_target,
+                'collated_masks_context': collated_masks_context
+                }
 
         
 

@@ -1,6 +1,7 @@
 
 
-import os
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import glob
 import cv2
 import torch
@@ -94,15 +95,21 @@ class LoadDataset(Dataset):
 if __name__ == '__main__':
 
         import time
+        import models.vit.VisionTransformerForEncoder as vit 
+        from models.multiblock import MultiBlockMaskCollator
+
 
         load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
 
-        dataloader = DataLoader(load_dataset_module, batch_size=1000, shuffle=False, num_workers=0)
+        dataloader = DataLoader(load_dataset_module, batch_size=1000, shuffle=False, num_workers=0, collate_fn=MultiBlockMaskCollator())
         
+        vit = vit(image_size=224, patch_size=16, in_channel=3, embedding_dim=256, depth=8, num_heads=8, attn_drop_rate=0.0, mlp_drop_rate=0.0, device='gpu', init_std=0.02)
         start_ = time.time() 
         for idx, data in enumerate(dataloader):
 
             print(data['labels'])
+            print(data)
+            
 
             if idx == 10000: 
                 break
