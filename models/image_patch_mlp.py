@@ -10,20 +10,35 @@ import torch.nn as nn
 
 
 
-class ImagePatchMLP(nn.Module):
-    '''A single layer of fully-connected network to project the flattened image patches into a lower/higher dimensional space.
+class PatchEmbedding(nn.Module):
+    '''The idea of patch embedding is to divide a given image into same-size grids and project each grids into another dimension linearly.
+       This can be done effectively by using a conv layer with specific configuration.
     '''
 
 
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, image_height, image_width, patch_size, in_channel, embedding_dim):
 
-        super(ImagePatchMLP, self).__init__()
+        super(PatchEmbedding, self).__init__()
 
-        self.single_layer = nn.Linear(in_features=in_dim, out_features=out_dim)
+        self.patch_projection = nn.Conv2d(in_channel, embedding_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
-        '''Project the given image patches (flattened) without an activation function to another space.
-            
-          Input:
-            A tensor of shape [batch size, total number of patches, a single flattened image dimension]
-        '''
+        
+        x = self.patch_projection(x) #the output of this will be [batch size, embedding_dim, num_patches in height dimension, num_patches in width dimension]
+        x = x.flatten(2) #flatten both the num_patches dimension to get the total number of patches. [batch size, embedding_dim, num_patches]
+        x = x.transpose(1,2) #swap the axis. [batch size, num_patches, embedding_dim]
+
+        return x
+
+
+
+'''
+if __name__ == '__main__':
+
+    p = PatchEmbedding(image_height=224, image_width=224, patch_size=16, in_channel=3, embedding_dim=256)
+    
+    img = torch.randn((1, 3, 224, 224))
+
+    x = p(img)
+    print(x.shape)
+'''
