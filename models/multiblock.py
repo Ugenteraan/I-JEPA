@@ -189,7 +189,7 @@ class MultiBlockMaskCollator(object):
                 array_masks_complement.append(mask_complement)
                 min_keep_pred = min(min_keep_pred_target, len(mask_pred_target))
 
-            batch_masks_pred_target.append(torch.stack(array_masks_pred_target)) #append all the masks for this element in the batch.
+            batch_masks_pred_target.append(array_masks_pred_target) #append all the masks for this element in the batch.
 
             acceptable_regions = array_masks_complement
             if self.allow_overlap:
@@ -204,15 +204,16 @@ class MultiBlockMaskCollator(object):
 
                 min_keep_context = min(min_keep_context, len(mask_context))
 
-            batch_masks_context.append(torch.stack(array_masks_context))
+            batch_masks_context.append(array_masks_context)
         
         
-        collated_masks_pred_target = [torch.stack([m[:min_keep_pred] for m in mpt]) for mpt in batch_masks_pred_target]
-        collated_masks_pred_target = torch.stack(collated_masks_pred_target)
+        collated_masks_pred_target = [[m[:min_keep_pred] for m in mpt] for mpt in batch_masks_pred_target]
+        collated_masks_pred_target = torch.utils.data.default_collate(collated_masks_pred_target)
 
-        collated_masks_context = [torch.stack([m[:min_keep_context] for m in mc]) for mc in batch_masks_context]
-        collated_masks_context = torch.stack(collated_masks_context)
+        collated_masks_context = [[m[:min_keep_context] for m in mc] for mc in batch_masks_context]
+        collated_masks_context = torch.utils.data.default_collate(collated_masks_context)
         
+        #returns the data in [number of total masks, batch size, mask]. Later when we iterate through the masks, we'll get all the n-th masks for all the batches
         return {
                 'collated_batch_data_images':collated_batch_data_images,
                 'collated_batch_data_labels': collated_batch_data_labels,

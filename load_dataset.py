@@ -101,14 +101,16 @@ if __name__ == '__main__':
 
         load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
 
-        dataloader = DataLoader(load_dataset_module, batch_size=2, shuffle=False, num_workers=0, collate_fn=MultiBlockMaskCollator())
+        dataloader = DataLoader(load_dataset_module, batch_size=3, shuffle=False, num_workers=0, collate_fn=MultiBlockMaskCollator())
         
         device = torch.device('cuda:0')
         vit = vit(image_size=224, patch_size=16, in_channel=3, embedding_dim=256, depth=8, num_heads=8, attn_drop_rate=0.0, mlp_drop_rate=0.0, device=device, init_std=0.02)
         start_ = time.time() 
         for idx, data in enumerate(dataloader):
 
-            x = vit(data['collated_batch_data_images'].to(device), masks=data['collated_masks_pred_target'].to(device))
+            print('CHECK INITIAL SIZE: ', len(data['collated_masks_pred_target']), data['collated_masks_pred_target'][0].size())
+
+            x = vit(data['collated_batch_data_images'].to(device), masks=data['collated_masks_pred_target'])
             print(x.size())
 
             

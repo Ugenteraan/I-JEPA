@@ -21,6 +21,7 @@ def apply_masks_over_embedded_patches(x, masks):
     #official i-jepa code only takes in 1 x and 1 mask batch at a time.
     for idx, m in enumerate(masks):
         #mask is of size [batch size, index of patch]
+        print("M size: ", m.size())
         mask_keep = m.unsqueeze(-1).repeat(1, 1, x.size(-1)) #Reshape the mask tensor to be compatible with the given input tensor.
         print(mask_keep.size())
 
