@@ -16,14 +16,15 @@ from torchvision import transforms
 
 class VisualizeData:
 
-    def __init__(self, visualize_batch_size=6, num_workers=4, visualize_shuffle=False, image_height=224, image_width=224, patch_size=14, num_figs=10, fig_savepath='./figures/', deeplake_module=None, deeplake_dataset=None, deeplake_token=None, dataset_folder_path=None, collate_func=None):
+    def __init__(self, visualize_batch_size=6, pred_masks_num=4, context_masks_num=1, num_workers=4, visualize_shuffle=False, image_size=224,  patch_size=16, num_figs=10, fig_savepath='./figures/', deeplake_module=None, deeplake_dataset=None, deeplake_token=None, dataset_folder_path=None, collate_func=None):
 
-        self.image_height = image_height
-        self.image_width = image_width
+        self.image_size = image_size 
         self.patch_size = patch_size
         self.num_figs = num_figs
         self.fig_savepath = fig_savepath
         self.visualize_batch_size = visualize_batch_size
+        self.pred_masks_num = pred_masks_num
+        self.context_masks_num = context_masks_num
 
     
         self.dataloader = None
@@ -31,7 +32,7 @@ class VisualizeData:
             #multiple number of workers seems to be throwing errors when using Deeplake's dataloader.
             self.dataloader = deeplake_module(token=deeplake_token, collate_func=collate_func, deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
         else:
-            self.load_dataset_module = LoadDataset(dataset_folder_path=dataset_folder_path, transform=transforms.ToTensor())
+            self.load_dataset_module = LoadDataset(dataset_folder_path=dataset_folder_path, image_size=image_size, transform=transforms.ToTensor())
             self.dataloader = DataLoader(self.load_dataset_module, batch_size=visualize_batch_size, shuffle=visualize_shuffle, num_workers=num_workers, collate_fn=collate_func)
 
    
@@ -44,7 +45,7 @@ class VisualizeData:
         plt.imshow(original_image)
         plt.axis('off')
         
-        for i in range(len(masked_pred_images)):
+        for i in range(self.pred_masks_num):
             plt.sca(axes[row_idx, i+1])
             plt.imshow(masked_pred_images[i])
             plt.axis('off')
@@ -63,17 +64,17 @@ class VisualizeData:
         for idx, batch_data in enumerate(self.dataloader):
             
 
-            images = batch_data[0]
-            labels = batch_data[1]
-            pred_target_masks = batch_data[2]
-            context_masks = batch_data[3]
+            images = batch_data['collated_batch_data_images']
+            labels = batch_data['collated_batch_data_labels']
+            pred_target_masks = batch_data['collated_masks_pred_target']
+            context_masks = batch_data['collated_masks_context']
             
             for batch_idx in range(self.visualize_batch_size):
 
-                masked_pred_images = apply_masks_over_image_patches(image=images[batch_idx], patch_size=self.patch_size, image_height=self.image_height, image_width=self.image_width, masks_array=pred_target_masks[batch_idx]) 
-                masked_context_image = apply_masks_over_image_patches(image=images[batch_idx], patch_size=self.patch_size, image_height=self.image_height, image_width=self.image_width, masks_array=context_masks[batch_idx])
+                masked_pred_images = apply_masks_over_image_patches(image=images[batch_idx], patch_size=self.patch_size, image_size=self.image_size, masks_array=pred_target_masks, batch_idx=batch_idx) 
+                masked_context_image = apply_masks_over_image_patches(image=images[batch_idx], patch_size=self.patch_size, image_size=self.image_size, masks_array=context_masks, batch_idx=batch_idx)
                 
-                orig_image = torch.reshape(images[batch_idx], (-1, self.image_height, self.image_width)).numpy()
+                orig_image = torch.reshape(images[batch_idx], (-1, self.image_size, self.image_size)).numpy()
                 orig_image = np.transpose(orig_image, (1,2,0))
 
                 self.plot_images(fig=fig, axes=axes, row_idx=batch_idx, original_image=orig_image, masked_pred_images=masked_pred_images, masked_context_image=masked_context_image)
@@ -88,5 +89,7 @@ class VisualizeData:
 
 if __name__ == '__main__':
     #vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=6, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
-    vd = VisualizeData(visualize_batch_size=6, visualize_shuffle=False, num_workers=8, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
+    print("Executing...")
+    vd = VisualizeData(visualize_batch_size=4, visualize_shuffle=False, pred_masks_num=4, context_masks_num=1, num_workers=0, num_figs=10, image_size=280, patch_size=20, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
 
+    v = vd()

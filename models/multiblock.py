@@ -9,6 +9,7 @@ from multiprocessing import Value
 
 class MultiBlockMaskCollator(object):
     '''This module will be supplied in the collate parameter during the initialization of dataloader.
+       KEEP IN MIND THAT the best value for patch_size is 14. Anything more than 14 will cause the context mask to not properly cover the sides of the images. There'll always be a padding at the sides. I believe this happens due to the randomization of the block masks. When the block masks are randomized with the given size ranges, it cannot cover the sides when the patch size are more than the number of patches in total. When we set the patch size to be 14, the number of patches are 16. This is the ideal setting for an image of 224 x 224. If the image size is bigger, however, then the patch size can be increased. Just make sure, the patch size is divisible by the image size. 
     '''
 
 
@@ -108,6 +109,7 @@ class MultiBlockMaskCollator(object):
             #self.num_patch_rows/width - h/w here is to find the "free" spots in the entire patch size.
             top = torch.randint(0, self.num_patch_rows - h, (1,))
             left = torch.randint(0, self.num_patch_cols - w, (1,))
+
 
             mask = torch.zeros((self.num_patch_rows, self.num_patch_cols), dtype=torch.int32)
 
@@ -222,9 +224,6 @@ class MultiBlockMaskCollator(object):
                 }
 
         
-
-
-
 
 
 

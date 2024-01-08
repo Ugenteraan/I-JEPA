@@ -3,8 +3,13 @@
 
 import cv2
 import torch
+import torch.nn as nn
 import numpy as np
+import logging
+import time
 
+logging.basicConfig(filename='err.txt', filemode='a', level=logging.DEBUG)
+logger = logging.getLogger()
 
 def apply_masks_over_embedded_patches(x, masks):
     '''
@@ -20,68 +25,82 @@ def apply_masks_over_embedded_patches(x, masks):
     
     #official i-jepa code only takes in 1 x and 1 mask batch at a time.
     for idx, m in enumerate(masks):
-        #mask is of size [batch size, index of patch]
-        print("M size: ", m.size())
+        #m is of size [batch size, index of patch]
         mask_keep = m.unsqueeze(-1).repeat(1, 1, x.size(-1)) #Reshape the mask tensor to be compatible with the given input tensor.
-        print(mask_keep.size())
 
-        print(x.size())
+        
+        print(mask_keep.size())
+        print(mask_keep, torch.max(mask_keep), x.size())
+        time.sleep(5)
         
         #collect all the tensors in dimension 1 (number of patch dim) based on the given mask and append to the list.
         all_masked_patch_embeddings += [torch.gather(x, dim=1, index=mask_keep)]
+        if idx == 1:
+            print(mask_keep, x.size())
+            print(all_masked_patch_embeddings)
+            break
+    try: 
+        
+        print("mask: ", all_masked_patch_embeddings, "\n")
+        ret = torch.cat(all_masked_patch_embeddings, dim=0)
+    except Exception as err:
+        print("err")
+        print("masked patch embed: ", all_masked_patch_embeddings)
+        logger.debug(err) 
     
-    return torch.cat(all_masked_patch_embeddings, dim=0)
+    return ret
 
 
 
-    
 
-def apply_masks_over_image_patches(image, patch_size, image_height, image_width, masks_array, negate_mask=True):
+def apply_masks_over_image_patches(image, patch_size, image_size,  masks_array, batch_idx, negate_mask=True):
     '''Applies patched masks on the original image and returns the resulting image.
        negate_mask parameter is used to reverse the mask's purpose. That is to only show the masked areas instead of block the masked areas.
     '''
     
-    #calculate the patch size
-    num_patch_row = image_height//patch_size
-    num_patch_col = image_width//patch_size
-    
-    
-    #we flattened the image on the image height and width axis. We leave the channel axis.
-    #NOTE that the flattened image is of [image_height*image_width, channel]
-    #the masks array is calculated based on the patched images, not the original sized image.
-    #flattened_image = image.reshape((-1, image_height*image_width)).detach() #since torch's image channel is in the first dimension.
-    masks_array = masks_array.detach()
+    #calculate the number of patches in both sides.
+    num_patches = image_size//patch_size
     
     masked_images = []
-    #iterate through each mask
-    for idx, mask in enumerate(masks_array):
+    
+    #since the masks are in [mask num, batch size, mask indices] shape, we gotta transpose the first two dimensions so we can iterate through ALL masks in a single batch.
+    mask_array = torch.from_numpy(np.asarray(masks_array)).transpose(0,1)
+    mask_array = mask_array[batch_idx] #get all the masks belonging to the specified batch.
 
-         
+    for idx, mask in enumerate(mask_array):
+        '''The idea here is to iterate through the masks in a batch, get all the indices and convert the PATCH indices to pixel-level indices and apply the maskings.
+        '''
 
         image_to_be_masked = image.clone() 
         if negate_mask: #initialize a full black image.
-            image_to_be_masked = torch.zeros((image.size(0), image_height, image_width))
+            image_to_be_masked = torch.zeros((image.size(0), image_size, image_size))
 
         for index in mask:
-            row = index//num_patch_row
-            col = (index % num_patch_col)
+            '''For reference: 
+                patch_size = 14
+                num_patches = 16
+            '''
+            
+            #first we have to find the row and column of the patch.
+            row = index//num_patches
+            col = (index % num_patches)
+
             
             if negate_mask:
                 #fill in the original image's elements in the black image.
-                image_to_be_masked[:, col*num_patch_col:col*num_patch_col+num_patch_col, row*num_patch_row:row*num_patch_row+num_patch_row] = image[:, col*num_patch_col:col*num_patch_col+num_patch_col, row*num_patch_row:row*num_patch_row+num_patch_row]
+                image_to_be_masked[:, col*num_patches:col*num_patches+num_patches, row*num_patches:row*num_patches+num_patches] = image[:, col*num_patches:col*num_patches+num_patches, row*num_patches:row*num_patches+num_patches]
             else: 
                 #block the masked area.
-                image_to_be_masked[:, col*num_patch_col:col*num_patch_col+num_patch_col, row*num_patch_row:row*num_patch_row+num_patch_row] = 0.
-        
-        masked_image = torch.reshape(image_to_be_masked, (-1, image_height, image_width)).numpy()
+                image_to_be_masked[:, col*num_patches:col*num_patches+num_patches, row*num_patches:row*num_patches+num_patches] = 0.
+
+
+        masked_image = torch.reshape(image_to_be_masked, (-1, image_size, image_size)).numpy()
         masked_image = np.transpose(masked_image, (1,2,0))
         #masked_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2RGB)
         masked_images.append(masked_image)
 
     
     return masked_images
-            
-
 
 
 

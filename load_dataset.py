@@ -4,6 +4,7 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import glob
 import cv2
+import numpy as np
 import torch
 from torch.utils import data
 from torch.utils.data import Dataset, dataset, DataLoader
@@ -108,15 +109,16 @@ if __name__ == '__main__':
         start_ = time.time() 
         for idx, data in enumerate(dataloader):
 
-            print('CHECK INITIAL SIZE: ', len(data['collated_masks_pred_target']), data['collated_masks_pred_target'][0].size())
+            images = data['collated_batch_data_images'].to(device)
+            masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=device)
 
-            x = vit(data['collated_batch_data_images'].to(device), masks=data['collated_masks_pred_target'])
-            print(x.size())
+            x = vit(images, masks=masks_pred_target)
+            print("The big size: ", x.size())
 
             
 
             if idx == 10: 
-                break
+                pass
         end_ = time.time()
 
         print("Time taken: ", end_ - start_)
