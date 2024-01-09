@@ -90,6 +90,6 @@ class VisualizeData:
 if __name__ == '__main__':
     #vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=6, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
     print("Executing...")
-    vd = VisualizeData(visualize_batch_size=4, visualize_shuffle=False, pred_masks_num=4, context_masks_num=1, num_workers=0, num_figs=10, image_size=280, patch_size=20, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
+    vd = VisualizeData(visualize_batch_size=4, visualize_shuffle=False, pred_masks_num=4, context_masks_num=1, num_workers=4, num_figs=10, image_size=224, patch_size=14, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
 
     v = vd()
