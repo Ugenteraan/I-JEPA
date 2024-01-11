@@ -9,14 +9,27 @@ import torch
 
 from .patch_embedding import PatchEmbedding
 from .positional_encoder import PositionalEncoder
+from .transformer_encoder import TransformerEncoderNetwork
 from utils import apply_masks_over_embedded_patches
 
+
+class VisionTransformerForPredictor(nn.Module):
+
+    def __init__(self, embedding_dim, predictor_embed_dim, depth, num_heads, attn_drop_rate, mlp_drop_rate, device, init_std=0.02, **kwargs):
+
+        super(VisionTransformerForPredictor, self).__init__()
+
+        self.predictor_embed = nn.Linear(embedding_dim, predictor_embed_dim) #to project the incoming embedding to the predictor's embedding dimension.
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, predictor_embed_dim)) #learnable token for the masks.
+
+        
 
 
 class VisionTransformerForEncoder(nn.Module):
 
     def __init__(self, image_size, patch_size, in_channel, embedding_dim, depth, num_heads, attn_drop_rate, mlp_drop_rate, device, init_std=0.02, **kwargs):
         '''Vision Transformer to be used as the encoder for both the training and target images. There is no CLS token since there's no classification going on here.
+           MLP head is also not necessary for this ViT since we only want to produce embeddings.
         '''
 
         super(VisionTransformerForEncoder, self).__init__()
@@ -33,6 +46,19 @@ class VisionTransformerForEncoder(nn.Module):
         self.device = device
 
         self.patch_embed = PatchEmbedding(patch_size=self.patch_size, in_channel=self.in_channel, embedding_dim=self.embedding_dim, device=self.device)
+
+
+        self.transformer_blocks = TransformerEncoderNetwork(patch_embedding=patch_embedding,
+                                                            device=device,
+                                                            patch_embedding_dim=patch_embedding_dim, 
+                                                            projection_dim_keys=projection_dim_keys,
+                                                            projection_dim_values=projection_dim_values, 
+                                                            num_heads=num_heads
+                                                            )
+        #apply layernorm on the output of the transformer blocks.
+        self.final_layernorm = nn.LayerNorm(self.embedding_dim)
+
+                                                                
 
         
     
@@ -53,6 +79,9 @@ class VisionTransformerForEncoder(nn.Module):
 
         if masks is not None:
             x = apply_masks_over_embedded_patches(x, masks)
+
+        x = self.transformer_blocks(x)
+        x = self.final_layernorm(x)
 
         return x
         
