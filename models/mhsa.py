@@ -14,11 +14,11 @@ class MultiHeadAttention(nn.Module):
     '''Einops implementation of multi-head self attention.
     '''
 
-    def __init__(self, patch_embedding_dim, projection_dim_keys, projection_dim_values, num_heads, attn_dropout_prob):
+    def __init__(self, input_dim, projection_dim_keys, projection_dim_values, num_heads, attn_dropout_prob):
 
         super(MultiHeadAttention, self).__init__()
 
-        self.patch_embedding_dim = patch_embedding_dim
+        self.input_dim = input_dim
         self.projection_dim_keys = projection_dim_keys
         self.projection_dim_values = projection_dim_values
         self.num_heads = num_heads
@@ -27,13 +27,13 @@ class MultiHeadAttention(nn.Module):
         
         #we can simplify the operation by multiplying the projection dimension by 2 and separate the query and keys since they are both projected to the same dimension.
         #if the values were projected to the same dimension we could have simply multiplied by 3 and performed the same operation. But we want to allow flexibility by for the value dimension (projected).
-        self.Wq_Wk = nn.Linear(self.patch_embedding_dim, self.projection_dim_keys*2) #weights to project the last dimension of the input tensor to a projecction dimemsion for the query and keys.
-        self.Wv = nn.Linear(self.patch_embedding_dim, self.projection_dim_values) #the weight to project the last dimension of the input tensor to a projection dimensions for the values.
+        self.Wq_Wk = nn.Linear(self.input_dim, self.projection_dim_keys*2) #weights to project the last dimension of the input tensor to a projecction dimemsion for the query and keys.
+        self.Wv = nn.Linear(self.input_dim, self.projection_dim_values) #the weight to project the last dimension of the input tensor to a projection dimensions for the values.
 
         self.attention_dtopout = nn.Dropout(self.attn_dropout_prob)
 
         #to project the values' dimension back to the patch embedding dimension.
-        self.W_o = nn.Linear(self.projection_dim_values, self.patch_embedding_dim)
+        self.W_o = nn.Linear(self.projection_dim_values, self.input_dim)
 
 
         self.einops_rearrange_qk = einops.Rearrange('b n (h e qk) -> (qk) b h n e', h=self.num_heads, qk=2) #Einops operation to rearrange the q & k and to create the head dimension.
@@ -61,7 +61,7 @@ class MultiHeadAttention(nn.Module):
         scaling_factor = self.projection_dim_keys ** 0.5
 
         scaled_dot_projection = F.softmax(dot_projection, dim=-1)/scaling_factor #softmax the last dimension and scale it.
-        scaled_dot_projection = self.attention_dtopout(scaled_dot_proection) #apply dropout if any.
+        scaled_dot_projection = self.attention_dtopout(scaled_dot_projection) #apply dropout if any.
 
         #calculate the attention 
         attention_qkv = torch.einsum('bhsl, bhlv -> bhsv', scaled_dot_projection, values)

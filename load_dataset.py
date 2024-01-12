@@ -96,7 +96,8 @@ class LoadDataset(Dataset):
 if __name__ == '__main__':
 
         import time
-        from models.vit import VisionTransformerForEncoder as vit 
+        from models.vit import VisionTransformerForPredictor as vit 
+        from models.vit import VisionTransformerForEncoder as vitencoder 
         from models.multiblock import MultiBlockMaskCollator
 
 
@@ -105,14 +106,21 @@ if __name__ == '__main__':
         dataloader = DataLoader(load_dataset_module, batch_size=3, shuffle=False, num_workers=4, collate_fn=MultiBlockMaskCollator())
         
         device = torch.device('cuda:0')
-        vit = vit(image_size=224, patch_size=14, in_channel=3, embedding_dim=512, depth=8, num_heads=8, attn_drop_rate=0.0, mlp_drop_rate=0.0, device=device, init_std=0.02)
+        v = vit(num_patches=256, embedding_dim=512, predictor_embed_dim=512, projection_dim_keys=512, projection_dim_values=512, feedforward_projection_dim=512, depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device, init_std=0.02)
+        v_encoder = vitencoder(image_size=224, patch_size=14, in_channel=3, embedding_dim=512, feedforward_projection_dim=512, depth=5, num_heads=8, device=device, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, projection_dim_keys=512, projection_dim_values=512, init_std=0.02)
+        
         start_ = time.time() 
         for idx, data in enumerate(dataloader):
 
             images = data['collated_batch_data_images'].to(device)
             masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=device)
+            masks_ctxt = torch.tensor(np.asarray(data['collated_masks_context']), dtype=torch.int64, device=device)
 
-            x = vit(images, masks=masks_pred_target)
+
+            y = v_encoder(images, masks_ctxt)
+
+            print("Y: ", y.size(), masks_pred_target.size(), masks_ctxt.size())
+            x = v(y,  masks_ctxt=masks_ctxt, masks_pred_target=masks_pred_target)
             print("The big size: ", x.size())
 
             

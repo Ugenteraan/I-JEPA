@@ -23,32 +23,15 @@ def apply_masks_over_embedded_patches(x, masks):
 
     all_masked_patch_embeddings = []
     
-    #official i-jepa code only takes in 1 x and 1 mask batch at a time.
     for idx, m in enumerate(masks):
         #m is of size [batch size, index of patch]
         mask_keep = m.unsqueeze(-1).repeat(1, 1, x.size(-1)) #Reshape the mask tensor to be compatible with the given input tensor.
-
-        
-        print(mask_keep.size())
-        print(mask_keep, torch.max(mask_keep), x.size())
-        time.sleep(5)
         
         #collect all the tensors in dimension 1 (number of patch dim) based on the given mask and append to the list.
         all_masked_patch_embeddings += [torch.gather(x, dim=1, index=mask_keep)]
-        if idx == 1:
-            print(mask_keep, x.size())
-            print(all_masked_patch_embeddings)
-            break
-    try: 
-        
-        print("mask: ", all_masked_patch_embeddings, "\n")
-        ret = torch.cat(all_masked_patch_embeddings, dim=0)
-    except Exception as err:
-        print("err")
-        print("masked patch embed: ", all_masked_patch_embeddings)
-        logger.debug(err) 
     
-    return ret
+        
+    return torch.cat(all_masked_patch_embeddings, dim=0) 
 
 
 

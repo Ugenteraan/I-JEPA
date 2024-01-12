@@ -15,14 +15,14 @@ class TransformerEncoderBlock(nn.Module):
     '''
 
 
-    def __init__(self, patch_embedding_dim, projection_dim_keys, projection_dim_values, num_heads, attn_dropout_prob, feedforward_projection_dim, feedforward_dropout_prob, device):
+    def __init__(self, input_dim, projection_dim_keys, projection_dim_values, num_heads, attn_dropout_prob, feedforward_projection_dim, feedforward_dropout_prob, device):
 
         super(TransformerEncoderBlock, self).__init__()
 
         #initialize the self attention module together with a layernorm layer.
         self.multi_head_attention_block = nn.Sequential(
-                                                        nn.LayerNorm(patch_embedding_dim),
-                                                        MultiHeadAttention(patch_embedding_dim=patch_embedding_dim,
+                                                        nn.LayerNorm(input_dim),
+                                                        MultiHeadAttention(input_dim=input_dim,
                                                                            projection_dim_keys=projection_dim_keys,
                                                                            projection_dim_values=projection_dim_values,
                                                                            num_heads=num_heads,
@@ -30,9 +30,9 @@ class TransformerEncoderBlock(nn.Module):
                                                         )
 
         #initialize the feedforward block together with a layernorm layer.
-        self.feed_forward_block = nn.Sequential(
-                                                nn.LayerNorm(patch_embedding_dim),
-                                                FeedForwardEncoderBlock(patch_embedding_dim=patch_embedding_dim,
+        self.feedforward_block = nn.Sequential(
+                                                nn.LayerNorm(input_dim),
+                                                FeedForwardEncoderBlock(input_dim=input_dim,
                                                                         feedforward_projection_dim=feedforward_projection_dim,
                                                                         feedforward_dropout_prob=feedforward_dropout_prob).to(device)
                                                 )
@@ -56,9 +56,9 @@ class TransformerEncoderNetwork(nn.Sequential):
     '''Created a network of transformers using the TransformerEncoderBlock module with the given depth.
     '''
     
-    def __init__(self, transformer_network_depth, patch_embedding_dim, device, **kwargs):
+    def __init__(self, transformer_network_depth, input_dim, device, **kwargs):
 
-        super().__init__(*[TransformerEncoderBlock(patch_embedding_dim=patch_embedding_dim,
+        super().__init__(*[TransformerEncoderBlock(input_dim=input_dim,
                                                    device=device,
                                                    **kwargs
                                                    ) for _ in range(transformer_network_depth)])
