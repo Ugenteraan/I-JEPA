@@ -16,11 +16,11 @@ class PatchEmbedding(nn.Module):
     '''
 
 
-    def __init__(self, patch_size, in_channel, embedding_dim, device):
+    def __init__(self, patch_size, image_depth, embedding_dim, device):
 
         super(PatchEmbedding, self).__init__()
 
-        self.patch_projection = nn.Conv2d(in_channel, embedding_dim, kernel_size=patch_size, stride=patch_size).to(device)
+        self.patch_projection = nn.Conv2d(image_depth, embedding_dim, kernel_size=patch_size, stride=patch_size).to(device)
 
     def forward(self, x):
         
@@ -35,7 +35,7 @@ class PatchEmbedding(nn.Module):
 '''
 if __name__ == '__main__':
 
-    p = PatchEmbedding(patch_size=16, in_channel=3, embedding_dim=256)
+    p = PatchEmbedding(patch_size=16, image_depth=3, embedding_dim=256)
     
     img = torch.randn((1, 3, 224, 224))
 

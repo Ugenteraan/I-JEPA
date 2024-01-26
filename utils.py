@@ -90,4 +90,3 @@ def apply_masks_over_image_patches(image, patch_size, image_size,  masks_array, 
 
 
 
-

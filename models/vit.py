@@ -16,41 +16,43 @@ from utils import apply_masks_over_embedded_patches
 
 class VisionTransformerForPredictor(nn.Module):
 
-    def __init__(self, num_patches, embedding_dim, predictor_embed_dim, feedforward_projection_dim, depth, num_heads, device, init_std=0.02, **kwargs):
+    def __init__(self, input_dim, predictor_network_embedding_dim, device, **kwargs):
         '''Vision Transformer to be used as the predictor. The output from the predictor will be in the same dimension as the input since the output is trying to predict the embedding of the target images.
         '''
 
         super(VisionTransformerForPredictor, self).__init__()
 
-        self.predictor_embed = nn.Linear(embedding_dim, predictor_embed_dim).to(device) #to project the incoming embedding to the predictor's embedding dimension.
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, predictor_embed_dim)).to(device) #learnable token for the masks.
+        self.predictor_embed = nn.Linear(input_dim, predictor_network_embedding_dim).to(device) #to project the incoming embedding to the predictor's embedding dimension.
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, predictor_network_embedding_dim)).to(device) #learnable token for the masks.
         self.device = device
-        self.num_patches = num_patches
-        self.embedding_dim = embedding_dim
+        self.predictor_network_embedding_dim = predictor_network_embedding_dim
 
-        self.transformer_blocks = TransformerEncoderNetwork(
-                                                            transformer_network_depth=depth,
-                                                            device=self.device,
-                                                            input_dim=self.embedding_dim, 
-                                                            feedforward_projection_dim=feedforward_projection_dim,
-                                                            num_heads=num_heads,
-                                                            **kwargs
-                                                            ).to(device)
+        self.transformer_blocks = TransformerEncoderNetwork(device=device,
+                                                              input_dim=self.predictor_network_embedding_dim, 
+                                                              **kwargs
+                                                              ).to(device)
+
+
+
+
         #apply layernorm on the output of the transformer blocks.
-        self.final_layernorm = nn.LayerNorm(embedding_dim).to(device)
+        self.final_layernorm = nn.LayerNorm(input_dim).to(device)
 
-        self.predictor_projector = nn.Linear(predictor_embed_dim, embedding_dim).to(device) 
+        self.predictor_projector = nn.Linear(self.predictor_network_embedding_dim, input_dim).to(device) 
 
 
     def forward(self, x, masks_ctxt, masks_pred_target):
 
         x = self.predictor_embed(x)
 
+        num_patches = x.size(1)
         batch_size = len(x) // len(masks_ctxt) #this has to be done because the  apply_masks_over_embedded_patches function from utils.py causes the input tensor to be expanded by the number of masks given. In other words, the batch dimension value will be (original batch num x number of masks). Therefore, to get the right batch number, we do the division. REMEMBER, the function mentioned before is used with the context mask before the output comes to the predictor.
+        
+        _, num_ctxt, _ = x.size() #to get the size of the context mask.
 
         #generate the positional embedding tokens using the original image embedding sizes. Not the tensor after any mask(s) applied. 
         #the positional embeddings have to be masked with both the masks (pred/target masks and context masks) separately.
-        pos_embed_module = PositionalEncoder(token_length=self.num_patches, output_dim=self.embedding_dim, n=10000, device=self.device)
+        pos_embed_module = PositionalEncoder(token_length=num_patches, output_dim=self.predictor_network_embedding_dim, n=10000, device=self.device)
         pos_embedding_pred_target = pos_embed_module() #for the pred/target mask 
         
         #repeat the positional embedding's first dimension to match the Batch dimension.
@@ -71,21 +73,25 @@ class VisionTransformerForPredictor(nn.Module):
         pred_tokens = self.mask_token.repeat(pos_embedding_pred_target.size(0), pos_embedding_pred_target.size(1), 1) 
         pred_tokens += pos_embedding_pred_target
 
+        #next, the pred tokens has to be concatenated to the x. The tokens are to be concatenated in the first dimension. REMEBER, in the first dimension of 'x', where the patch index should be, all the pred/target masks indices shouldn't be present since the context mask is a complement of them. The idea here is to concat the indices to 'x' and eventually, the network will learn to predict the embeddings in those pred/target indices. 
+        x = x.repeat(len(masks_pred_target), 1, 1) #we need to repeat the batch dimension first in order to concat with the pred_tokens.
+        x = torch.cat([x, pred_tokens], dim=1)
 
+        #run through the predictor network.
+        x = self.transformer_blocks(x)
+        x = self.final_layernorm(x)
 
+        #after the input goes through the transformer network, we want to return the predictions to perform target loss. However, we do not need the context mask. Since we concatenated everything along the way, the first 'num_ctxt' value in the first dimension, can be ignored. 
+        x = x[:, num_ctxt:]
+        x = self.predictor_projector(x)
 
+        return x
 
-
-        return None        
-
-
-
-        
 
 
 class VisionTransformerForEncoder(nn.Module):
 
-    def __init__(self, image_size, patch_size, in_channel, embedding_dim, depth, num_heads, device, init_std=0.02, **kwargs):
+    def __init__(self, image_size, patch_size, image_depth, encoder_network_embedding_dim, device, **kwargs):
         '''Vision Transformer to be used as the encoder for both the training and target images. There is no CLS token since there's no classification going on here.
            MLP head is also not necessary for this ViT since we only want to produce embeddings.
         '''
@@ -94,27 +100,22 @@ class VisionTransformerForEncoder(nn.Module):
 
         self.image_size = image_size
         self.patch_size = patch_size
-        self.in_channel = in_channel
-        self.embedding_dim = embedding_dim
-        self.depth = depth
-        self.num_heads = num_heads
-        self.init_std = init_std
+        self.image_depth = image_depth
+        self.patch_embedding_dim = self.image_depth*self.patch_size**2
+        self.encoder_network_embedding_dim = encoder_network_embedding_dim
         self.device = device
 
-        self.patch_embed = PatchEmbedding(patch_size=self.patch_size, in_channel=self.in_channel, embedding_dim=self.embedding_dim, device=self.device).to(device)
+        self.patch_embed = PatchEmbedding(patch_size=self.patch_size, image_depth=self.image_depth, embedding_dim=self.encoder_network_embedding_dim, device=self.device).to(device)
 
+        #use the nn.sequential module to build the transformer network with the specified depth.
+        self.transformer_blocks = TransformerEncoderNetwork(device=device,
+                                                          input_dim=self.encoder_network_embedding_dim,
+                                                          **kwargs
+                                                          ).to(device) 
 
-        self.transformer_blocks = TransformerEncoderNetwork(
-                                                            transformer_network_depth=depth,
-                                                            device=device,
-                                                            input_dim=embedding_dim, 
-                                                            num_heads=num_heads,
-                                                            **kwargs
-                                                            ).to(device)
         #apply layernorm on the output of the transformer blocks.
-        self.final_layernorm = nn.LayerNorm(self.embedding_dim).to(device)
+        self.final_layernorm = nn.LayerNorm(self.encoder_network_embedding_dim).to(device)
 
-                                                                
 
         
     
@@ -141,22 +142,19 @@ class VisionTransformerForEncoder(nn.Module):
 
         return x
         
-        
+'''        
 if __name__ == '__main__':
 
 
     device = torch.device('cuda:0')
 
-    v = VisionTransformerForPredictor(embedding_dim=512, predictor_embed_dim=512, projection_dim_keys=512, projection_dim_values=512, feedforward_projection_dim=512, depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device, init_std=0.02)
+    v = VisionTransformerForPredictor(encoder_network_embedding_dim=512, predictor_network_embed_dim=512, projection_dim_keys=512, projection_dim_values=512, feedforward_projection_dim=512, depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device, init_std=0.02)
     
     x = torch.randn((2, 196, 512))
 
     ret = v(x)
     print(ret)
-
-
-
-
+'''
 
 
 

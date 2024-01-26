@@ -3,7 +3,7 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import glob
-import cv2
+from PIL import Image, ImageOps
 import numpy as np
 import torch
 from torch.utils import data
@@ -13,8 +13,8 @@ from torchvision import transforms
 
 
 
-class LoadDataset(Dataset):
-    '''Loads the dataset from the given path.
+class LoadLocalDataset(Dataset):
+    '''Loads the dataset from the given path. The dataset folder is expected to have two folders named "train" and "test". Inside each of them, there should be folders named after their classes.
     '''
 
     def __init__(self, dataset_folder_path, image_size=224, image_depth=3, train=True, transform=None):
@@ -65,7 +65,6 @@ class LoadDataset(Dataset):
         '''Returns the total size of the data.
         '''
         return len(self.image_path_label)
-        return 400
 
     def __getitem__(self, idx):
         '''Returns a single image and its corresponding label.
@@ -74,15 +73,14 @@ class LoadDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        image, label = self.image_path_label[idx]
+        image_path, label = self.image_path_label[idx]
 
         if self.image_depth == 1:
-            image = cv2.imread(image, 0)
+            image = ImageOps.grayscale(image_path)
         else:
-            image = cv2.imread(image)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = Image.open(image_path)
 
-        image = cv2.resize(image, (self.image_size, self.image_size))
+        image.resize((self.image_size, self.image_size))
 
         if self.transform:
             image = self.transform(image)
@@ -101,13 +99,15 @@ if __name__ == '__main__':
         from models.multiblock import MultiBlockMaskCollator
 
 
-        load_dataset_module = LoadDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
+
+        load_dataset_module = LoadLocalDataset(dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset/", transform=transforms.ToTensor())
 
         dataloader = DataLoader(load_dataset_module, batch_size=3, shuffle=False, num_workers=4, collate_fn=MultiBlockMaskCollator())
         
         device = torch.device('cuda:0')
-        v = vit(num_patches=256, embedding_dim=512, predictor_embed_dim=512, projection_dim_keys=512, projection_dim_values=512, feedforward_projection_dim=512, depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device, init_std=0.02)
-        v_encoder = vitencoder(image_size=224, patch_size=14, in_channel=3, embedding_dim=512, feedforward_projection_dim=512, depth=5, num_heads=8, device=device, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, projection_dim_keys=512, projection_dim_values=512, init_std=0.02)
+        v = vit(input_dim=512, predictor_network_embedding_dim=512, projection_keys_dim=512, projection_values_dim=512, feedforward_projection_dim=512, transformer_network_depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device)
+        v_encoder = vitencoder(image_size=224, patch_size=14, in_channel=3, encoder_network_embedding_dim=512, feedforward_projection_dim=512, transformer_network_depth=5, num_heads=8, device=device, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, projection_keys_dim=512, projection_values_dim=512)
+
         
         start_ = time.time() 
         for idx, data in enumerate(dataloader):

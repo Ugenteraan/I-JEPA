@@ -10,38 +10,173 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 from torchvision import transforms
+from torch.utils.data import Dataset, dataset, DataLoader
 from torchsummary import summary
 import cv2
+import argparse
+import yaml
+import copy
 
 
-def main():
-    '''Main training module.
-    '''
+#import ijepa modules
+from models.vit import VisionTransformerForEncoder as vitencoder 
+from models.vit import VisionTransformerForPredictor as vitpredictor
+from models.multiblock import MultiBlockMaskCollator
+from load_dataset import LoadLocalDataset
 
-    img = cv2.imread('test.jpg')
+def main(args):
 
-    img_tensor = torch.from_numpy(cv2.resize(img, (224,224)))
-    #img = torch.permute(img, (2, 0, 1)).to(torch.float32)
-    print(img_tensor.size(), img_tensor.dtype)
+    #Read the config file from args.
+    with open(args.config, 'r') as configfile:
+        config = yaml.load(configfile, Loader=yaml.FullLoader)
+        print("Configuration read successful...")
 
-    #unfolding_func = nn.Unfold(kernel_size=(16,16), stride=(16,16))
+    #@@@@@@@@@@@@@@@@@@@@@@@@@ Extract the configurations from YAML file @@@@@@@@@@@@@@@@@@@@@@
+
+    #Data configurations
+    BATCH_SIZE = config['data']['batch_size']
+    IMAGE_SIZE = config['data']['image_size']
+    IMAGE_DEPTH = config['data']['image_depth']
+    DATASET_FOLDER = config['data']['dataset_folder']
+    NUM_WORKERS = config['data']['num_workers']
+    SHUFFLE = config['data']['shuffle']
+    USE_RANDOM_HORIZONTAL_FLIP = config['data']['use_random_horizontal_flip']
+    RANDOM_AFFINE_DEGREES = config['data']['random_affine']['degrees']
+    RANDOM_AFFINE_TRANSLATE = config['data']['random_affine']['translate']
+    RANDOM_AFFINE_SCALE = config['data']['random_affine']['scale']
+    COLOR_JITTER_BRIGHTNESS = config['data']['color_jitter']['brightness']
+    COLOR_JITTER_HUE = config['data']['color_jitter']['hue']
+
+    #Mask configurations
+    ALLOW_OVERLAP = config['mask']['allow_overlap']
+    PATCH_SIZE = config['mask']['patch_size']
+    ASPECT_RATIO = config['mask']['aspect_ratio']
+    NUM_CONTEXT_MASK = config['mask']['num_context_mask']
+    NUM_PRED_TARGET_MASK = config['mask']['num_pred_target_mask']
+    PRED_TARGET_MASK_SCALE = config['mask']['pred_target_mask_scale']
+    CONTEXT_MASK_SCALE = config['mask']['context_mask_scale']
+    MIN_MASK_LENGTH = config['mask']['min_mask_length']
+
+    #Model configurations
+    MODEL_SAVE_FOLDER = config['model']['model_save_folder']
+    MODEL_NAME = config['model']['model_name']
+    TRANSFORMER_DEPTH = config['model']['transformer_depth']
+    ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder_network_embedding_dim']
+    PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor_network_embedding_dim']
+    PROJECTION_KEYS_DIM = config['model']['projection_keys_dim']
+    PROJECTION_VALUES_DIM = config['model']['projection_values_dim']
+    FEEDFORWARD_PROJECTION_DIM = config['model']['feedforward_projection_dim']
+    NUM_HEADS = config['model']['num_heads']
+    ATTN_DROPOUT_PROB = config['model']['attn_dropout_prob']
+    FEEDFORWARD_DROPOUT_PROB = config['model']['feedforward_dropout_prob']
+
+    #Training configurations
+    DEVICE = config['training']['device']
+    DEVICE = torch.device("cuda:0" if torch.cuda.is_available() and DEVICE=='gpu' else 'cpu')
+    LOAD_CHECKPOINT = config['training']['load_checkpoint']
+    END_EPOCH = config['training']['end_epoch']
+    START_EPOCH = config['training']['start_epoch']
+    LEARNING_RATE = config['training']['learning_rate']
+    USE_BFLOAT16 = config['training']['use_bfloat16']
+
+    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     
-    #patched_image_tensors = unfolding_func(img)
-
-    #print(patched_image_tensors.size())
     
-    mask = torch.zeros((224,224, 3), dtype=torch.uint8) 
+    #Init models
+    print("Init encoder model....")
+    ENCODER_NETWORK = vitencoder(image_size=IMAGE_SIZE,
+                         patch_size=PATCH_SIZE, 
+                         image_depth=IMAGE_DEPTH, 
+                         encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
+                         device=DEVICE,
+                         transformer_network_depth=TRANSFORMER_DEPTH,
+                         projection_keys_dim=PROJECTION_KEYS_DIM,
+                         projection_values_dim=PROJECTION_VALUES_DIM,
+                         num_heads=NUM_HEADS,
+                         attn_dropout_prob=ATTN_DROPOUT_PROB,
+                         feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
+                         feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)  
+
+    summary(ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
+    
+    print("Init predictor model...")
+    PREDICTOR_NETWORK = vitpredictor(input_dim=ENCODER_NETWORK_EMBEDDING_DIM, #the input dim for the predictor network is the output dim from the encoder network.
+                            predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM, 
+                            device=DEVICE,
+                            transformer_network_depth=TRANSFORMER_DEPTH,
+                            projection_keys_dim=PROJECTION_KEYS_DIM,
+                            projection_values_dim=PROJECTION_VALUES_DIM,
+                            num_heads=NUM_HEADS,
+                            attn_dropout_prob=ATTN_DROPOUT_PROB,
+                            feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
+                            feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
+    
+    #to be used to generate the target embeddings. This network shares the same parameters as the encoder network.
+    TARGET_ENCODER = copy.deepcopy(ENCODER_NETWORK) #creates an independent copy of the entire object hierarchy.    
+    
+    #initialize the mask collator module.
+    MASK_COLLATOR_FN = MultiBlockMaskCollator(image_size=IMAGE_SIZE,
+                                              patch_size=PATCH_SIZE,
+                                              num_context_mask=NUM_CONTEXT_MASK,
+                                              num_pred_target_mask=NUM_PRED_TARGET_MASK,
+                                              context_mask_scale=CONTEXT_MASK_SCALE,
+                                              pred_target_mask_scale=PRED_TARGET_MASK_SCALE,
+                                              aspect_ratio=ASPECT_RATIO,
+                                              min_mask_length=MIN_MASK_LENGTH,
+                                              allow_overlap=ALLOW_OVERLAP)
+    
+    transforms_compose_list = [transforms.ColorJitter(brightness=COLOR_JITTER_BRIGHTNESS, hue=COLOR_JITTER_HUE),
+                          transforms.RandomAffine(degrees=RANDOM_AFFINE_DEGREES, translate=RANDOM_AFFINE_TRANSLATE, scale=RANDOM_AFFINE_SCALE),
+                          transforms.ToTensor()
+                          ]
+    #insert the random horizontal flip to the list at the beginning if it's true.
+    if USE_RANDOM_HORIZONTAL_FLIP:
+        transforms_compose_list.insert(0, transforms.RandomHorizontalFlip())
+    #insert the lambda function to convert grayscale images (with depth 1) to RGB (sort of) images. This is required since some images in dataset might be originally grayscale.
+    if IMAGE_DEPTH == 3:
+        transforms_compose_list.insert(-2, transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1))
+
+
+    #dataloader init.
+    DATASET_LOADER = LoadLocalDataset(dataset_folder_path=DATASET_FOLDER,
+                                      transforms=transforms.compose(transforms_compose_list))
+
+    DATASET_LOADER = DataLoader(DATASET_LOADER, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, collate_fn=MASK_COLLATOR_FN) 
+    
+    #As for the optimizer, we can create one optimizer for each model or create one optimizer and pass in multiple models' params. 
+    #we'll go with the 2nd option here.
     
 
-    #masked_img = torch.bitwise_and(img.type(torch.int8), mask)
-    masked_img = img_tensor * mask
+    for epoch_idx in range(START_EPOCH, END_EPOCH):
 
-    numpy_img = masked_img.numpy()
-    cv2.imshow('img', numpy_img)
-    cv2.waitKey(0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 if __name__=='__main__':
-    main()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', required=True, type=str, help='Specify the YAML config file to be used.')
+    args = parser.parse_args()
+
+    main(args)
 

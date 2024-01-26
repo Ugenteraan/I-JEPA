@@ -9,7 +9,7 @@ class PositionalEncoder:
     '''Sine and Cosine positional encoder module.
     '''
 
-    def __init__(self, token_length, output_dim, n=1000, device='cpu'):
+    def __init__(self, token_length, output_dim, n=10000, device='cpu'):
         '''Param init.
         '''
 

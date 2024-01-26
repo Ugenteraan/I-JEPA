@@ -14,8 +14,7 @@ class MultiBlockMaskCollator(object):
 
 
     def __init__(self, 
-                 image_height=224, 
-                 image_width=224, 
+                 image_size=224, 
                  patch_size=14,
                  num_context_mask=1,
                  num_pred_target_mask=4,
@@ -27,8 +26,8 @@ class MultiBlockMaskCollator(object):
         
         super(MultiBlockMaskCollator, self).__init__()
         self.patch_size = patch_size
-        self.num_patch_rows = image_height // patch_size #number of patches in the row dimension
-        self.num_patch_cols = image_width // patch_size #number of patches in the col dimension
+        self.num_patch_rows = image_size // patch_size #number of patches in the row dimension
+        self.num_patch_cols = image_size // patch_size #number of patches in the col dimension
         self.context_mask_scale = context_mask_scale
         self.pred_target_mask_scale = pred_target_mask_scale
         self.aspect_ratio = aspect_ratio
