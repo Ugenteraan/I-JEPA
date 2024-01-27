@@ -23,6 +23,7 @@ from models.vit import VisionTransformerForEncoder as vitencoder
 from models.vit import VisionTransformerForPredictor as vitpredictor
 from models.multiblock import MultiBlockMaskCollator
 from load_dataset import LoadLocalDataset
+from init_optim import InitOptimWithSGDR
 
 def main(args):
 
@@ -76,7 +77,13 @@ def main(args):
     LOAD_CHECKPOINT = config['training']['load_checkpoint']
     END_EPOCH = config['training']['end_epoch']
     START_EPOCH = config['training']['start_epoch']
-    LEARNING_RATE = config['training']['learning_rate']
+    COSINE_UPPER_BOUND_LR = config['training']['cosine_upper_bound_lr']
+    COSINE_LOWER_BOUND_LR = config['training']['cosine_lower_bound_lr']
+    WARMUP_START_LR = config['training']['warmup_start_lr']
+    WARMUP_STEPS = config['training']['warmup_steps']
+    NUM_EPOCH_TO_RESTART_LR = config['training']['num_epoch_to_restart_lr']
+    COSINE_UPPER_BOUND_WD = config['training']['cosine_upper_bound_wd']
+    COSINE_LOWER_BOUND_WD = config['training']['cosine_lower_bound_wd']
     USE_BFLOAT16 = config['training']['use_bfloat16']
 
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -134,20 +141,35 @@ def main(args):
         transforms_compose_list.insert(0, transforms.RandomHorizontalFlip())
     #insert the lambda function to convert grayscale images (with depth 1) to RGB (sort of) images. This is required since some images in dataset might be originally grayscale.
     if IMAGE_DEPTH == 3:
-        transforms_compose_list.insert(-2, transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1))
+        transforms_compose_list.insert(-2, transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1)))
 
 
     #dataloader init.
-    DATASET_LOADER = LoadLocalDataset(dataset_folder_path=DATASET_FOLDER,
-                                      transforms=transforms.compose(transforms_compose_list))
+    DATASET_MODULE = LoadLocalDataset(dataset_folder_path=DATASET_FOLDER,
+                                      transform=transforms.Compose(transforms_compose_list))
 
-    DATASET_LOADER = DataLoader(DATASET_LOADER, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, collate_fn=MASK_COLLATOR_FN) 
+    DATASET_LOADER = DataLoader(DATASET_MODULE, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS, collate_fn=MASK_COLLATOR_FN) 
     
     #As for the optimizer, we can create one optimizer for each model or create one optimizer and pass in multiple models' params. 
     #we'll go with the 2nd option here.
+    iterations_per_epoch = len(DATASET_LOADER)
+    #this module contains the init for optimizer and schedulers.
+    OPTIM_AND_SCHEDULERS = InitOptimWithSGDR(
+                                             encoder_network=ENCODER_NETWORK, 
+                                             predictor_network=PREDICTOR_NETWORK, 
+                                             cosine_upper_bound_lr=COSINE_UPPER_BOUND_LR, 
+                                             cosine_lower_bound_lr=COSINE_LOWER_BOUND_LR, 
+                                             warmup_start_lr=WARMUP_START_LR, 
+                                             warmup_steps=WARMUP_STEPS,
+                                             num_steps_to_restart_lr=NUM_EPOCH_TO_RESTART_LR*iterations_per_epoch,
+                                             cosine_upper_bound_wd=COSINE_UPPER_BOUND_WD,
+                                             cosine_lower_bound_wd=COSINE_LOWER_BOUND_WD
+                                            ) 
+    OPTIMIZER = OPTIM_AND_SCHEDULERS.get_optimizer()
     
 
     for epoch_idx in range(START_EPOCH, END_EPOCH):
+        print("here")
 
 
 
