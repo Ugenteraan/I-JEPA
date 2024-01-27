@@ -86,7 +86,16 @@ def apply_masks_over_image_patches(image, patch_size, image_size,  masks_array, 
     return masked_images
 
 
-
+def repeat_interleave_batch(x, batch_size, repeat):
+    '''This function is the same as torch's repeat interleave, except that this works only on the batch dimension.
+       Basically here, we're "stacking" each element 'repeat' times in its place rather than "stacking" the entire tensor on top of each other 'repeat' times.
+    '''
+    N = len(x) // batch_size
+    x = torch.cat([
+        torch.cat([x[i*batch_size:(i+1)*batch_size] for _ in range(repeat)], dim=0)
+        for i in range(N)
+    ], dim=0)
+    return x
 
 
 

@@ -9,9 +9,11 @@ from tqdm import tqdm
 from pathlib import Path
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import Dataset, dataset, DataLoader
 from torchsummary import summary
+import numpy as np
 import cv2
 import argparse
 import yaml
@@ -24,6 +26,7 @@ from models.vit import VisionTransformerForPredictor as vitpredictor
 from models.multiblock import MultiBlockMaskCollator
 from load_dataset import LoadLocalDataset
 from init_optim import InitOptimWithSGDR
+from utils import apply_masks_over_embedded_patches, repeat_interleave_batch
 
 def main(args):
 
@@ -141,7 +144,8 @@ def main(args):
         transforms_compose_list.insert(0, transforms.RandomHorizontalFlip())
     #insert the lambda function to convert grayscale images (with depth 1) to RGB (sort of) images. This is required since some images in dataset might be originally grayscale.
     if IMAGE_DEPTH == 3:
-        transforms_compose_list.insert(-2, transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1)))
+        #this process should be AFTER the image has been converted to tensor.
+        transforms_compose_list.append(transforms.Lambda(lambda x: x.repeat(int(3/x.shape[0]), 1, 1)))
 
 
     #dataloader init.
@@ -166,14 +170,32 @@ def main(args):
                                              cosine_lower_bound_wd=COSINE_LOWER_BOUND_WD
                                             ) 
     OPTIMIZER = OPTIM_AND_SCHEDULERS.get_optimizer()
+    SCALER = None
+
+    #scaler is used to scale the values in variables like state_dict, optimizer etc to bfloat16 type.
+    if USE_BFLOAT16:
+        SCALER = torch.cuda.amp.GradScaler()
     
 
     for epoch_idx in range(START_EPOCH, END_EPOCH):
-        print("here")
 
 
+        for idx, data in enumerate(DATASET_LOADER):
 
+            images = data['collated_batch_data_images'].to(DEVICE)
+            masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=DEVICE)
+            masks_ctxt = torch.tensor(np.asarray(data['collated_masks_context']), dtype=torch.int64, device=DEVICE)
 
+            batch_size = len(images) 
+    
+            with torch.cuda.amp.autocast(dtype=torch.bfloat16, enabled=USE_BFLOAT16):
+                
+                #first we want to create the target.
+                #REMEMBER! Since for every context block, we want to predict N number of target mask, we;re gonna have to create N copies of the targets
+                target = TARGET_ENCODER(images)
+                target = apply_masks_over_embedded_patches(target, masks_pred_target)
+                target = repeat_interleave_batch(target, batch_size, NUM_CONTEXT_MASK) #in case the number of context mask is more than 1.
+            break
 
 
 
