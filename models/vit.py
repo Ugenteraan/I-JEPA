@@ -16,7 +16,7 @@ from utils import apply_masks_over_embedded_patches
 
 class VisionTransformerForPredictor(nn.Module):
 
-    def __init__(self, input_dim, predictor_network_embedding_dim, device, **kwargs):
+    def __init__(self, input_dim, num_patches, predictor_network_embedding_dim, device, **kwargs):
         '''Vision Transformer to be used as the predictor. The output from the predictor will be in the same dimension as the input since the output is trying to predict the embedding of the target images.
         '''
 
@@ -26,6 +26,7 @@ class VisionTransformerForPredictor(nn.Module):
         self.mask_token = nn.Parameter(torch.zeros(1, 1, predictor_network_embedding_dim)).to(device) #learnable token for the masks.
         self.device = device
         self.predictor_network_embedding_dim = predictor_network_embedding_dim
+        self.num_patches = num_patches #we have to define the num patches here since we can't infer this from the input. Reason: Input is already masked. So, the num of patches is lower than it should be.
 
         self.transformer_blocks = TransformerEncoderNetwork(device=device,
                                                               input_dim=self.predictor_network_embedding_dim, 
@@ -45,14 +46,13 @@ class VisionTransformerForPredictor(nn.Module):
 
         x = self.predictor_embed(x)
 
-        num_patches = x.size(1)
         batch_size = len(x) // len(masks_ctxt) #this has to be done because the  apply_masks_over_embedded_patches function from utils.py causes the input tensor to be expanded by the number of masks given. In other words, the batch dimension value will be (original batch num x number of masks). Therefore, to get the right batch number, we do the division. REMEMBER, the function mentioned before is used with the context mask before the output comes to the predictor.
         
         _, num_ctxt, _ = x.size() #to get the size of the context mask.
 
         #generate the positional embedding tokens using the original image embedding sizes. Not the tensor after any mask(s) applied. 
         #the positional embeddings have to be masked with both the masks (pred/target masks and context masks) separately.
-        pos_embed_module = PositionalEncoder(token_length=num_patches, output_dim=self.predictor_network_embedding_dim, n=10000, device=self.device)
+        pos_embed_module = PositionalEncoder(token_length=self.num_patches, output_dim=self.predictor_network_embedding_dim, n=10000, device=self.device)
         pos_embedding_pred_target = pos_embed_module() #for the pred/target mask 
         
         #repeat the positional embedding's first dimension to match the Batch dimension.

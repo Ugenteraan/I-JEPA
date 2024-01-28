@@ -1,7 +1,7 @@
 #Configurations
 
 data:
-  batch_size: 5
+  batch_size: 2
   image_size: 224
   image_depth: 3
   dataset_folder: "/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset"
@@ -35,7 +35,7 @@ mask:
   context_mask_scale:
     - 0.85
     - 1.0
-  min_mask_length: 8 #minimum number of patch to keep when generating a mask.
+  min_mask_length: 4 #minimum number of patch to keep when generating a mask.
 model:
   model_save_folder: ./artifacts/
   model_name: vit_huge
@@ -54,6 +54,9 @@ training:
   load_checkpoint: true
   start_epoch : 0
   end_epoch : 100
+  ema: 
+    - 0.995
+    - 1.0
   cosine_upper_bound_lr : 1.0e-2
   cosine_lower_bound_lr : 1.0e-6
   cosine_upper_bound_wd : 0.4

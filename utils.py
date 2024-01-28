@@ -4,6 +4,7 @@
 import cv2
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import logging
 import time
@@ -96,6 +97,18 @@ def repeat_interleave_batch(x, batch_size, repeat):
         for i in range(N)
     ], dim=0)
     return x
+
+
+
+def loss_fn(prediction, target):
+    '''The loss function of I-Jepa is basically just L1 loss.
+    '''
+
+    loss = F.smooth_l1_loss(prediction, target)
+
+    return loss
+
+
 
 
 

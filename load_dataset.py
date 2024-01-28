@@ -80,7 +80,7 @@ class LoadLocalDataset(Dataset):
         else:
             image = Image.open(image_path)
 
-        image.resize((self.image_size, self.image_size))
+        image = image.resize((self.image_size, self.image_size))
 
         if self.transform:
             image = self.transform(image)
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         
         device = torch.device('cuda:0')
         v = vit(input_dim=512, predictor_network_embedding_dim=512, projection_keys_dim=512, projection_values_dim=512, feedforward_projection_dim=512, transformer_network_depth=5, num_heads=8, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, device=device)
-        v_encoder = vitencoder(image_size=224, patch_size=14, in_channel=3, encoder_network_embedding_dim=512, feedforward_projection_dim=512, transformer_network_depth=5, num_heads=8, device=device, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, projection_keys_dim=512, projection_values_dim=512)
+        v_encoder = vitencoder(image_size=224, image_depth=3, patch_size=14, in_channel=3, encoder_network_embedding_dim=512, feedforward_projection_dim=512, transformer_network_depth=5, num_heads=8, device=device, attn_dropout_prob=0.1, feedforward_dropout_prob=0.1, projection_keys_dim=512, projection_values_dim=512)
 
         
         start_ = time.time() 

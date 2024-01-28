@@ -14,10 +14,10 @@ class PositionalEncoder:
         '''
 
         self.device = device
-        self.token_length = token_length
-        self.output_dim = output_dim
+        self.token_length = int(token_length)
+        self.output_dim = int(output_dim)
         self.n = n
-        self.P = torch.zeros((token_length, output_dim), requires_grad=False).to(device)
+        self.P = torch.zeros((self.token_length, self.output_dim), requires_grad=False).to(self.device)
 
 
     def calc_pos_embedding(self):

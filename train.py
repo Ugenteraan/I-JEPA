@@ -4,6 +4,7 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 from tqdm import tqdm
 from pathlib import Path
@@ -26,7 +27,7 @@ from models.vit import VisionTransformerForPredictor as vitpredictor
 from models.multiblock import MultiBlockMaskCollator
 from load_dataset import LoadLocalDataset
 from init_optim import InitOptimWithSGDR
-from utils import apply_masks_over_embedded_patches, repeat_interleave_batch
+from utils import apply_masks_over_embedded_patches, repeat_interleave_batch, loss_fn
 
 def main(args):
 
@@ -78,6 +79,7 @@ def main(args):
     DEVICE = config['training']['device']
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() and DEVICE=='gpu' else 'cpu')
     LOAD_CHECKPOINT = config['training']['load_checkpoint']
+    EMA = config['training']['ema']
     END_EPOCH = config['training']['end_epoch']
     START_EPOCH = config['training']['start_epoch']
     COSINE_UPPER_BOUND_LR = config['training']['cosine_upper_bound_lr']
@@ -91,6 +93,8 @@ def main(args):
 
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     
+    #calculating the number of patches for the initialization of parameter in the predictor network.
+    NUM_PATCHES = (IMAGE_SIZE/PATCH_SIZE)**2
     
     #Init models
     print("Init encoder model....")
@@ -112,6 +116,7 @@ def main(args):
     print("Init predictor model...")
     PREDICTOR_NETWORK = vitpredictor(input_dim=ENCODER_NETWORK_EMBEDDING_DIM, #the input dim for the predictor network is the output dim from the encoder network.
                             predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM, 
+                            num_patches=NUM_PATCHES,
                             device=DEVICE,
                             transformer_network_depth=TRANSFORMER_DEPTH,
                             projection_keys_dim=PROJECTION_KEYS_DIM,
@@ -122,7 +127,7 @@ def main(args):
                             feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
     
     #to be used to generate the target embeddings. This network shares the same parameters as the encoder network.
-    TARGET_ENCODER = copy.deepcopy(ENCODER_NETWORK) #creates an independent copy of the entire object hierarchy.    
+    TARGET_ENCODER_NETWORK = copy.deepcopy(ENCODER_NETWORK) #creates an independent copy of the entire object hierarchy.    
     
     #initialize the mask collator module.
     MASK_COLLATOR_FN = MultiBlockMaskCollator(image_size=IMAGE_SIZE,
@@ -171,6 +176,9 @@ def main(args):
                                             ) 
     OPTIMIZER = OPTIM_AND_SCHEDULERS.get_optimizer()
     SCALER = None
+    
+    #generator object that holds momentum scaling values (to control the strength of the momentum) from the start of the training to the end. 
+    MOMENTUM_SCHEDULER = (EMA[0] + i*(EMA[1] - EMA[0])/(iterations_per_epoch*(END_EPOCH-START_EPOCH)) for i in range(int(END_EPOCH - START_EPOCH)*iterations_per_epoch+1))
 
     #scaler is used to scale the values in variables like state_dict, optimizer etc to bfloat16 type.
     if USE_BFLOAT16:
@@ -188,14 +196,52 @@ def main(args):
 
             batch_size = len(images) 
     
+            #forward propagation.
             with torch.cuda.amp.autocast(dtype=torch.bfloat16, enabled=USE_BFLOAT16):
                 
-                #first we want to create the target.
-                #REMEMBER! Since for every context block, we want to predict N number of target mask, we;re gonna have to create N copies of the targets
-                target = TARGET_ENCODER(images)
-                target = apply_masks_over_embedded_patches(target, masks_pred_target)
-                target = repeat_interleave_batch(target, batch_size, NUM_CONTEXT_MASK) #in case the number of context mask is more than 1.
-            break
+                #first we want to create the target. With no gradients involved.
+                with torch.no_grad():   
+                    actual_target_embeddings  = TARGET_ENCODER_NETWORK(images)
+                    actual_target_embeddings = apply_masks_over_embedded_patches(actual_target_embeddings, masks_pred_target)
+                    actual_target_embeddings = repeat_interleave_batch(actual_target_embeddings, batch_size, NUM_CONTEXT_MASK) #in case the number of context mask is more than 1.
+
+                #create the embedding for the context image using the encoder network.
+                context_image_embedding = ENCODER_NETWORK(images, masks_ctxt)
+
+                #perform prediction.
+                predicted_target_embeddings = PREDICTOR_NETWORK(x=context_image_embedding, masks_ctxt=masks_ctxt, masks_pred_target=masks_pred_target)    
+
+                #calculate loss
+                loss = loss_fn(prediction=predicted_target_embeddings, target=actual_target_embeddings)
+
+            #backward and step
+            if USE_BFLOAT16:
+                SCALER.scale(loss).backward()
+                SCALER.step(OPTIMIZER)
+                SCALER.update()
+            else:
+                loss.backward()
+                OPTIMIZER.step()
+
+            OPTIMIZER.zero_grad()
+            _new_lr, _new_wd = OPTIM_AND_SCHEDULERS.step()
+            #once the gradients are updated, the target encoder has to be updated with the new weight. 
+            #the update will be done with a momentum parameter. That is, the old network parameter will be scaled with a momentum parameter and then multiplied to the new network parameter.
+            #we will be using momentum scheduler to control the momentum weight.
+            with torch.no_grad():
+                m = next(MOMENTUM_SCHEDULER)
+                for param_q, param_k in zip(ENCODER_NETWORK.parameters(), TARGET_ENCODER_NETWORK.parameters()):
+                    
+                    #we want to multiply the parameters from target encoder with the momentum scaling and then add a small value (1 - momentum value) from the encoder network.
+                    param_k.mul_(m).add((1.-m) * param_q.detach().data) #update the target encoder's parameter.
+
+            
+
+
+
+                                
+
+            
 
 
 
