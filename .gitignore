@@ -1,4 +1,4 @@
-B# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,6 +8,19 @@ __pycache__/
 
 .DS_Store
 cred.py
+log/**
+artifacts/**
+*.tar
+*.pth
+*.pt
+
+#media
+*.jpg
+*.jpeg
+*.mp4
+*.mkv
+*.avi
+*.png
 
 # Distribution / packaging
 .Python
