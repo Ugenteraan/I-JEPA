@@ -164,7 +164,6 @@ class MultiBlockMaskCollator(object):
         num_batch = len(batch_data)
 
         collated_batch_data_images = torch.utils.data.default_collate([x['images'] for x in batch_data]) #we return the original data here since masking processes does not require the data.
-        collated_batch_data_labels = torch.utils.data.default_collate([x['labels'] for x in batch_data])
 
         #before we randomize anything, we need to remember that if multiple workers are accessing this module, then the random values would be different for the masks on the same image!
         #hence, we have to use the torch generator that uses a same seed value across the workers for the same image.
@@ -220,7 +219,6 @@ class MultiBlockMaskCollator(object):
         #returns the data in [number of total masks, batch size, mask]. Later when we iterate through the masks, we'll get all the n-th masks for all the batches
         return {
                 'collated_batch_data_images':collated_batch_data_images,
-                'collated_batch_data_labels': collated_batch_data_labels,
                 'collated_masks_pred_target':collated_masks_pred_target,
                 'collated_masks_context': collated_masks_context
                 }

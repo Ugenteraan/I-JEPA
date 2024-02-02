@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import glob
 from PIL import Image, ImageOps
 import numpy as np
+import cv2
 import torch
 from torch.utils import data
 from torch.utils.data import Dataset, dataset, DataLoader
@@ -17,56 +18,45 @@ class LoadLocalDataset(Dataset):
     '''Loads the dataset from the given path. The dataset folder is expected to have two folders named "train" and "test". Inside each of them, there should be folders named after their classes.
     '''
 
-    def __init__(self, dataset_folder_path, image_size=224, image_depth=3, train=True, transform=None, logger=None):
+    def __init__(self, dataset_folder_path, image_size=224, image_depth=3, transform=None, logger=None):
         '''Parameter Init.
         '''
 
-        assert not dataset_folder_path is None, "Path to the dataset folder must be provided!"
+        if dataset_folder_path is None:
+            logger.error("Dataset folder path must be provided!")
+            sys.exit()
 
         self.dataset_folder_path = dataset_folder_path
         self.transform = transform
         self.image_size = image_size
         self.image_depth = image_depth
-        self.train = train
-        self.classes = sorted(self.get_classnames())
-        self.image_path_label = self.read_folder()
+        self.image_path = self.read_folder()
         self.logger = logger
 
 
 
-
-    def get_classnames(self):
-        '''Returns the name of the classes in the dataset.
-        '''
-        return os.listdir(f"{self.dataset_folder_path.rstrip('/')}/train/" )
-
-
     def read_folder(self):
-        '''Reads the folder for the images with their corresponding label (foldername).
+        '''Reads the folder for the images.
         '''
-
-        image_path_label = []
-
-        if self.train:
-            folder_path = f"{self.dataset_folder_path.rstrip('/')}/train/"
-        else:
-            folder_path = f"{self.dataset_folder_path.rstrip('/')}/test/"
+        
+        image_path = []
+    
+        folder_path = f"{self.dataset_folder_path.rstrip('/')}/"
 
         for x in glob.glob(folder_path + "**", recursive=True):
 
             if not x.endswith('jpg'):
                 continue
 
-            class_idx = self.classes.index(x.split('/')[-2])
-            image_path_label.append((x, int(class_idx)))
+            image_path.append(x)
 
-        return image_path_label
+        return image_path
 
 
     def __len__(self):
         '''Returns the total size of the data.
         '''
-        return len(self.image_path_label)
+        return len(self.image_path)
 
     def __getitem__(self, idx):
         '''Returns a single image and its corresponding label.
@@ -75,12 +65,19 @@ class LoadLocalDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        image_path, label = self.image_path_label[idx]
+        image_path = self.image_path[idx]
 
-        if self.image_depth == 1:
-            image = ImageOps.grayscale(image_path)
-        else:
-            image = Image.open(image_path)
+        try:
+            if self.image_depth == 1:
+                image = cv2.imread(image_path, 0)
+            else:
+                image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+            
+            #sometimes PIl throws truncated image error. Perhaps due to the image being too big? Hence the cv2 imread.
+            image = Image.fromarray(image)
+        except Exception as err:
+            self.logger.error(f"Error loading image: {err}")
+            sys.exit()
 
         image = image.resize((self.image_size, self.image_size))
 
@@ -88,8 +85,7 @@ class LoadLocalDataset(Dataset):
             image = self.transform(image)
 
         return {
-            'images': image,
-            'labels': label
+            'images': image
         }
 
 '''

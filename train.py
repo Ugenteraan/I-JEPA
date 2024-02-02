@@ -22,6 +22,7 @@ from loguru import logger
 import datetime
 
 
+
 #import ijepa modules
 from models.vit import VisionTransformerForEncoder as vitencoder 
 from models.vit import VisionTransformerForPredictor as vitpredictor
@@ -200,6 +201,7 @@ def train(args):
     #As for the optimizer, we can create one optimizer for each model or create one optimizer and pass in multiple models' params. 
     #we'll go with the 2nd option here.
     iterations_per_epoch = len(DATASET_LOADER)
+    logger.info(f"Dataloader is loaded! Total iteration per epoch: {iterations_per_epoch}")
     #this module contains the init for optimizer and schedulers.
     OPTIM_AND_SCHEDULERS = InitOptimWithSGDR(
                                              encoder_network=ENCODER_NETWORK, 
@@ -245,7 +247,7 @@ def train(args):
         
         epoch_loss = 0
 
-        for idx, data in enumerate(DATASET_LOADER):
+        for idx, data in tqdm(enumerate(DATASET_LOADER)):
 
             images = data['collated_batch_data_images'].to(DEVICE)
             masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=DEVICE)
