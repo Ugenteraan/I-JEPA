@@ -158,7 +158,7 @@ def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
             msg = target_encoder_network.load_state_dict(checkpoint['target_encoder_network'])
             logger.info(f"Loaded target encoder network with msg: {msg}")
 
-        optimizer.load(checkpoint['optimizer'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
 
         if scaler is not None:
             scaler.load_state_dict(checkpoint['scaler'])    
@@ -172,7 +172,6 @@ def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
 
     return encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch
         
-
 
 
             

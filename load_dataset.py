@@ -66,6 +66,7 @@ class LoadLocalDataset(Dataset):
             idx = idx.tolist()
 
         image_path = self.image_path[idx]
+        self.logger.trace(f"Reading {image_path}...")
 
         try:
             if self.image_depth == 1:

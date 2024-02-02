@@ -30,8 +30,12 @@ from models.multiblock import MultiBlockMaskCollator
 from load_dataset import LoadLocalDataset
 from init_optim import InitOptimWithSGDR
 from utils import apply_masks_over_embedded_patches, repeat_interleave_batch, loss_fn, load_checkpoint, save_checkpoint
+import cred #disable this if you're not using anything that requires secret credentials.
 
 DATETIME_NOW = datetime.datetime.now().replace(second=0, microsecond=0) #datetime without seconds & miliseconds.
+
+
+
 
 def train(args):
 
@@ -124,9 +128,20 @@ def train(args):
     COSINE_UPPER_BOUND_WD = config['training']['cosine_upper_bound_wd']
     COSINE_LOWER_BOUND_WD = config['training']['cosine_lower_bound_wd']
     USE_BFLOAT16 = config['training']['use_bfloat16']
+    USE_NEPTUNE = config['training']['use_neptune']
 
     #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     
+    if USE_NEPTUNE:
+        import neptune
+
+        NEPTUNE_RUN = neptune.init_run(
+                                        project=cred.NEPTUNE_PROJECT,
+                                        api_token=cred.NEPTUNE_API_TOKEN
+                                      )
+        #we have partially unsupported types. Hence the utils method.
+        NEPTUNE_RUN['parameters'] = neptune.utils.stringify_unsupported(config)
+
     #calculating the number of patches for the initialization of parameter in the predictor network.
     NUM_PATCHES = (IMAGE_SIZE/PATCH_SIZE)**2
     
@@ -273,6 +288,7 @@ def train(args):
                 #calculate loss
                 loss = loss_fn(prediction=predicted_target_embeddings, target=actual_target_embeddings)
                 epoch_loss += loss.item()
+                
 
             #backward and step
             if USE_BFLOAT16:
@@ -285,6 +301,13 @@ def train(args):
 
             OPTIMIZER.zero_grad()
             _new_lr, _new_wd = OPTIM_AND_SCHEDULERS.step()
+
+
+            if USE_NEPTUNE:
+                NEPTUNE_RUN['train/loss_per_step'].append(loss.item())
+                NEPTUNE_RUN['train/learning_rate_per_step'].append(_new_lr)
+                NEPTUNE_RUN['train/weight_decay_per_step'].append(_new_wd)
+
             #once the gradients are updated, the target encoder has to be updated with the new weight. 
             #the update will be done with a momentum parameter. That is, the old network parameter will be scaled with a momentum parameter and then multiplied to the new network parameter.
             #we will be using momentum scheduler to control the momentum weight.
@@ -311,7 +334,9 @@ def train(args):
                             epoch=epoch_idx, 
                             loss=loss,
                             logger=logger)
-            
+    
+    if USE_NEPTUNE:
+        NEPTUNE_RUN.stop() 
 
 
 

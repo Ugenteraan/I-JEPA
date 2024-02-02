@@ -67,6 +67,7 @@ training:
   warmup_start_lr : 2.0e-4
   warmup_steps : 5
   use_bfloat16: true
+  use_neptune: true
 
 
 
