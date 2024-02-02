@@ -319,6 +319,8 @@ def train(args):
                     param_k.mul_(m).add((1.-m) * param_q.detach().data) #update the target encoder's parameter.
 
         logger.info(f"The loss at epoch {epoch_idx} is {epoch_loss}") 
+        if USE_NEPTUNE:
+            NEPTUNE_RUN['train/loss_per_epoch'].append(epoch_loss)
 
         #save checkpoints as per defined in the model save frequency (epoch).
         if epoch_idx % MODEL_SAVE_FREQ == 0:
