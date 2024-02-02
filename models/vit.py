@@ -27,7 +27,6 @@ class VisionTransformerForPredictor(nn.Module):
         self.device = device
         self.predictor_network_embedding_dim = predictor_network_embedding_dim
         self.num_patches = num_patches #we have to define the num patches here since we can't infer this from the input. Reason: Input is already masked. So, the num of patches is lower than it should be.
-
         self.transformer_blocks = TransformerEncoderNetwork(device=device,
                                                               input_dim=self.predictor_network_embedding_dim, 
                                                               **kwargs
@@ -40,6 +39,7 @@ class VisionTransformerForPredictor(nn.Module):
         self.final_layernorm = nn.LayerNorm(input_dim).to(device)
 
         self.predictor_projector = nn.Linear(self.predictor_network_embedding_dim, input_dim).to(device) 
+
 
 
     def forward(self, x, masks_ctxt, masks_pred_target):

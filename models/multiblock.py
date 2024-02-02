@@ -22,7 +22,8 @@ class MultiBlockMaskCollator(object):
                  pred_target_mask_scale=(0.15, 0.2),
                  aspect_ratio=(0.75, 1.5),
                  min_mask_length=4,
-                 allow_overlap=False):
+                 allow_overlap=False,
+                 logger=None):
         
         super(MultiBlockMaskCollator, self).__init__()
         self.patch_size = patch_size
@@ -36,6 +37,7 @@ class MultiBlockMaskCollator(object):
         self.min_mask_length = min_mask_length
         self.allow_overlap = allow_overlap
         self._itr_counter = Value('i', -1)
+        self.logger = logger
     
     def seed_step(self):
         '''This module will ensure that the value of the seed increases consistently across ALL workers.
@@ -133,7 +135,8 @@ class MultiBlockMaskCollator(object):
                     minus_num_region += 1
                     tries = num_tries
 
-                    print(f"Valid mask not found, decreasing the number of acceptable regions [{minus_num_region}]")
+                    self.logger.error(f"Valid mask not found, decreasing the number of acceptable regions [{minus_num_region}]")
+                    
                 
         mask = mask.squeeze()
         

@@ -109,6 +109,79 @@ def loss_fn(prediction, target):
     return loss
 
 
+def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch, loss, logger=None):
+    '''Save model checkpoint.
+    '''
+    save_dict = {
+                'encoder_network': encoder_network.state_dict(),
+                'predictor_network': predictor_network.state_dict(),
+                'target_encoder_network': target_encoder_network.state_dict(),
+                'optimizer': optimizer,
+                'scaler': scaler, 
+                'epoch': epoch, #useful for resuming training from the last epoch.
+                'loss' : loss #record purposes. 
+                }
+    
+    try:
+        torch.save(save_dict, f"{model_save_folder.rstrip('/')}/{model_name}-checkpoint-ep-{epoch}.pth.tar") 
+        torch.save(save_dict, f"{model_save_folder.rstrip('/')}/{model_name}-latest.pth.tar") 
+        logger.info(f"Model checkpoint save for epoch {epoch} is successful!")
+    except Exception as err:
+        logger.error(f"Model checkpoint save for epoch {epoch} has failed! {err}")
+
+    return None
+
+
+
+
+def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, load_checkpoint_epoch=None, logger=logger):
+    '''Loads either the latest model (if load_checkpoint_val is None) or loads the specific checkpoint.
+    '''
+
+    try:
+        checkpoint = None 
+        if not load_checkpoint_epoch is None:
+            checkpoint = torch.load(f"{model_save_folder.rstrip('/')}/{model_name}-checkpoint-ep-{load_checkpoint_epoch}.pth.tar")
+        else:
+            checkpoint = torch.load(f"{model_save_folder.rstrip('/')}/{model_name}-latest.pth.tar")
+
+        epoch = checkpoint['epoch']
+        logger.info("Checkpoint from epoch {epoch} is successfully loaded! Extracting the parameters to load to individual model/variabels now...")
+
+        msg = encoder_network.load_state_dict(checkpoint['encoder_network'])
+        logger.info(f"Loaded pretrained encoder network with msg: {msg}")
+
+        msg = predictor_network.load_state_dict(checkpoint['predictor_network'])
+        logger.info(f"Loaded pretrained predictor network with msg: {msg}")
+
+        if target_encoder_network is not None:
+            msg = target_encoder_network.load_state_dict(checkpoint['target_encoder_network'])
+            logger.info(f"Loaded target encoder network with msg: {msg}")
+
+        optimizer.load(checkpoint['optimizer'])
+
+        if scaler is not None:
+            scaler.load_state_dict(checkpoint['scaler'])    
+
+        logger.info(f"Loaded optimizers and scalers from checkpoint...")
+
+    
+    except Exception as err:
+        logger.error(f"Error loading the model! {err}")
+        epoch = 0
+
+    return encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch
+        
+
+
+
+            
+
+
+
+
+
+
 
 
 

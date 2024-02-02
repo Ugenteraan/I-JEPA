@@ -1,5 +1,5 @@
 #Configurations
-
+env: development
 data:
   batch_size: 2
   image_size: 224
@@ -38,7 +38,8 @@ mask:
   min_mask_length: 4 #minimum number of patch to keep when generating a mask.
 model:
   model_save_folder: ./artifacts/
-  model_name: vit_huge
+  model_save_freq: 5 #save every N epoch.
+  model_name: i-jepa 
   transformer_depth: 12
   encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
   predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
@@ -52,6 +53,7 @@ model:
 training:
   device : gpu
   load_checkpoint: true
+  load_checkpoint_epoch: null
   start_epoch : 0
   end_epoch : 100
   ema: 

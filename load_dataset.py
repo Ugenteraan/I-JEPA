@@ -17,7 +17,7 @@ class LoadLocalDataset(Dataset):
     '''Loads the dataset from the given path. The dataset folder is expected to have two folders named "train" and "test". Inside each of them, there should be folders named after their classes.
     '''
 
-    def __init__(self, dataset_folder_path, image_size=224, image_depth=3, train=True, transform=None):
+    def __init__(self, dataset_folder_path, image_size=224, image_depth=3, train=True, transform=None, logger=None):
         '''Parameter Init.
         '''
 
@@ -30,6 +30,8 @@ class LoadLocalDataset(Dataset):
         self.train = train
         self.classes = sorted(self.get_classnames())
         self.image_path_label = self.read_folder()
+        self.logger = logger
+
 
 
 
@@ -90,7 +92,7 @@ class LoadLocalDataset(Dataset):
             'labels': label
         }
 
-
+'''
 if __name__ == '__main__':
 
         import time
@@ -130,3 +132,4 @@ if __name__ == '__main__':
         end_ = time.time()
 
         print("Time taken: ", end_ - start_)
+'''

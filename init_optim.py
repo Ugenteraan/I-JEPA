@@ -21,17 +21,19 @@ class InitOptimWithSGDR:
                  warmup_steps,
                  num_steps_to_restart_lr,
                  cosine_upper_bound_wd,
-                 cosine_lower_bound_wd):
+                 cosine_lower_bound_wd,
+                 logger=None):
 
         self.cosine_upper_bound_lr = cosine_upper_bound_lr
         self.cosine_lower_bound_lr = cosine_lower_bound_lr
         self.warmup_start_lr = warmup_start_lr
         self.warmup_steps = warmup_steps
         self.num_steps_to_restart_lr = num_steps_to_restart_lr
-        self.step = 0
+        self.step_counter = 0
         self.cosine_upper_bound_wd = cosine_upper_bound_wd
         self.cosine_lower_bound_wd = cosine_lower_bound_wd
 
+        self.logger = logger
 
         #we want to apply weight decay only to the weights. Not the biases. Therefore, we'll create two separate groups of params for both networks.
         param_group = [
@@ -77,24 +79,24 @@ class InitOptimWithSGDR:
         '''Must be executed at every iteration step (not epoch step).
         '''
 
-        self.step += 1
+        self.step_counter += 1
 
         #we're gonna need to write 2 piece of logics. 1 for the warm up period. And 1 for after the warm up period.
-        if self.step <= self.warmup_steps:
-            fraction_term = (cosine_upper_bound_lr - warmup_start_lr)/(self.warmup_steps) #we don't need the -1 in the denominator since we're starting the steps from 1 not 0.
-            new_lr = warmup_start_lr + self.step * fraction_term
+        if self.step_counter <= self.warmup_steps:
+            fraction_term = (self.cosine_upper_bound_lr - self.warmup_start_lr)/(self.warmup_steps) #we don't need the -1 in the denominator since we're starting the steps from 1 not 0.
+            new_lr = self.warmup_start_lr + self.step_counter * fraction_term
 
         else:
             #cosine annealing after the warmup.
-            fraction_term = float(self.step - self.warmup_steps) / float(max(1, self.num_steps_to_restart_lr))
-            new_lr = max(self.cosine_lower_bound_lr, self.cosine_annealing(start_value=cosine_lower_bound_lr,
-                                                                           end_value=cosine_upper_bound_lr,
+            fraction_term = float(self.step_counter - self.warmup_steps) / float(max(1, self.num_steps_to_restart_lr))
+            new_lr = max(self.cosine_lower_bound_lr, self.cosine_annealing(start_value=self.cosine_lower_bound_lr,
+                                                                           end_value=self.cosine_upper_bound_lr,
                                                                            fraction_term=fraction_term))
         
         #calculate the weight decay rate. There is no warmup period for decay rate and we will be using the same num of steps we used for lr for the restart.
-        fraction_term = self.step / self.num_steps_to_restart_lr
-        new_wd = self.cosine_annealing(start_value=cosine_lower_bound_wd,
-                                       end_value=cosine_upper_bound_wd,
+        fraction_term = self.step_counter / self.num_steps_to_restart_lr
+        new_wd = self.cosine_annealing(start_value=self.cosine_lower_bound_wd,
+                                       end_value=self.cosine_upper_bound_wd,
                                        fraction_term=fraction_term)
         
         #update the optimizer with the new learning rate and the new weight decay rate.

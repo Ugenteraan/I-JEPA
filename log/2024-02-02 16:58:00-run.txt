@@ -1,0 +1,6 @@
+02-02-2024 16:58:39:[INFO]:__main__:train:133 - Init Encoder model... - [0:00:00.048060]
+02-02-2024 16:58:41:[INFO]:__main__:train:149 - Init Predictor model... - [0:00:01.339498]
+02-02-2024 16:58:41:[INFO]:__main__:train:167 - Init MultiBlockMaskCollator module... - [0:00:01.464290]
+02-02-2024 16:58:41:[INFO]:__main__:train:193 - Init local dataset loading module... - [0:00:01.465383]
+02-02-2024 16:58:41:[ERROR]:utils:load_checkpoint:170 - Error loading the model! [Errno 2] No such file or directory: './artifacts/i-jepa-latest.pth.tar' - [0:00:01.512097]
+02-02-2024 16:58:41:[INFO]:__main__:train:244 - Training has started for epoch 0 - [0:00:01.512665]
