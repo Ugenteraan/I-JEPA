@@ -13,6 +13,7 @@ artifacts/**
 *.tar
 *.pth
 *.pt
+military_aircraft_detection/**
 
 #media
 *.jpg
