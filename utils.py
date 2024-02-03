@@ -1,16 +1,12 @@
 '''Helper functions to be used throughout the project.
 '''
 
-import cv2
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import logging
 import time
 
-logging.basicConfig(filename='err.txt', filemode='a', level=logging.DEBUG)
-logger = logging.getLogger()
 
 def apply_masks_over_embedded_patches(x, masks):
     '''
