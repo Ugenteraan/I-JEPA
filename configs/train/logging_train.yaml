@@ -1,0 +1,16 @@
+
+
+disable_default_loggers: true
+log_dir: ./logs/train/ 
+log_filename: train.txt
+
+formatters:
+  development:
+    format: '{time:DD-MM-YYYY HH:mm:ss}:<red>[{level}]</red>:<cyan>{name}</cyan>:<cyan>{function}</cyan>:{line} - {message} - <green>[{elapsed}]</green>'
+    backtrace: true
+    diagnose: true
+    enqueue: false 
+    level: INFO 
+    
+
+

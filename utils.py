@@ -130,7 +130,7 @@ def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
 
 
 
-def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, load_checkpoint_epoch=None, logger=logger):
+def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, load_checkpoint_epoch=None, logger=None):
     '''Loads either the latest model (if load_checkpoint_val is None) or loads the specific checkpoint.
     '''
 
@@ -172,10 +172,47 @@ def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
 
             
 
+def load_checkpoint_downstream(trained_model_folder, trained_model_name, encoder_network, predictor_network, load_checkpoint_epoch=None, strict=False, logger=None):
+    '''Loads either the latest model (if load_checkpoint_val is None) or loads the specific checkpoint.
+    '''
+
+    try:
+        checkpoint = None 
+        if not load_checkpoint_epoch is None:
+            checkpoint = torch.load(f"{trained_model_folder.rstrip('/')}/{trained_model_name}-checkpoint-ep-{load_checkpoint_epoch}.pth.tar")
+        else:
+            checkpoint = torch.load(f"{trained_model_folder.rstrip('/')}/{trained_model_name}-latest.pth.tar")
+
+
+        msg = encoder_network.load_state_dict(checkpoint['encoder_network'], strict=strict)
+        logger.info(f"Loaded pretrained encoder network with msg: {msg}")
+
+        msg = predictor_network.load_state_dict(checkpoint['predictor_network'], strict=strict)
+        logger.info(f"Loaded pretrained predictor network with msg: {msg}")
+
+
+    
+    except Exception as err:
+        logger.error(f"Error loading the model! {err}")
+        
+
+    return encoder_network, predictor_network
 
 
 
+def calculate_accuracy(predicted, target):
+    '''Calculates the accuracy of the prediction.
+    '''
 
+
+    num_data = target.size()[0]
+    predicted = torch.argmax(predicted, dim=1)
+
+    correct_pred = torch.sum(predicted == target)
+
+    accuracy = correct_pred*(num_data/100)
+
+    return accuracy.item()
 
 
 

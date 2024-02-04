@@ -27,7 +27,7 @@ import datetime
 from models.vit import VisionTransformerForEncoder as vitencoder 
 from models.vit import VisionTransformerForPredictor as vitpredictor
 from models.multiblock import MultiBlockMaskCollator
-from load_dataset import LoadLocalDataset
+from load_dataset import LoadUnlabelledDataset
 from init_optim import InitOptimWithSGDR
 from utils import apply_masks_over_embedded_patches, repeat_interleave_batch, loss_fn, load_checkpoint, save_checkpoint
 import cred #disable this if you're not using anything that requires secret credentials.
@@ -207,7 +207,7 @@ def train(args):
 
     #dataloader init.
     logger.info("Init local dataset loading module...")
-    DATASET_MODULE = LoadLocalDataset(dataset_folder_path=DATASET_FOLDER,
+    DATASET_MODULE = LoadUnlabelledDataset(dataset_folder_path=DATASET_FOLDER,
                                       transform=transforms.Compose(transforms_compose_list),
                                       logger=logger)
 

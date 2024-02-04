@@ -1,0 +1,74 @@
+#Configurations
+env: development
+data:
+  batch_size: 64
+  image_size: 224
+  image_depth: 3
+  dataset_folder: "./military_aircraft_detection/dataset/"
+  num_workers: 8
+  shuffle: true
+  use_random_horizontal_flip: true
+  random_affine:
+    degrees: 
+      - 20
+      - 50
+    translate: 
+      - 0.1
+      - 0.3
+    scale:
+      - 0.4
+      - 0.6
+  color_jitter:
+    brightness: 0.5
+    hue: 0.3
+mask:
+  allow_overlap: false
+  patch_size: 14
+  aspect_ratio: 
+    - 0.75
+    - 1.5
+  num_context_mask: 1
+  num_pred_target_mask: 4  
+  pred_target_mask_scale:
+    - 0.15
+    - 0.2
+  context_mask_scale:
+    - 0.85
+    - 1.0
+  min_mask_length: 10 #minimum number of patch to keep when generating a mask.
+model:
+  model_save_folder: ./artifacts/train/
+  model_save_freq: 5 #save every N epoch.
+  model_name: i-jepa-military-aircraft
+  transformer_depth: 10
+  encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
+  predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
+  projection_keys_dim : 256
+  projection_values_dim : 256
+  feedforward_projection_dim : 1024 
+  num_heads : 8
+  attn_dropout_prob : 0.1
+  feedforward_dropout_prob : 0.1
+
+training:
+  device : gpu
+  load_checkpoint: true
+  load_checkpoint_epoch: null
+  start_epoch : 0
+  end_epoch : 500
+  ema: 
+    - 0.995
+    - 1.0
+  cosine_upper_bound_lr : 1.0e-4
+  cosine_lower_bound_lr : 5.0e-6
+  cosine_upper_bound_wd : 0.4
+  cosine_lower_bound_wd : 0.04
+  num_epoch_to_restart_lr : 3 #will be multiplied by iterations per epoch later since we're using the scale of steps for everything in the code.
+  warmup_start_lr : 2.0e-6 #learning rate starts here.
+  warmup_steps : 5 #iteration step. Not epoch step.
+  use_bfloat16: true
+  use_neptune: true
+
+
+
+

@@ -1,8 +1,8 @@
 
 
 disable_default_loggers: true
-log_dir: ./log/ 
-log_filename: run.txt
+log_dir: ./logs/downstream/ 
+log_filename: downstream.txt
 
 formatters:
   development:
