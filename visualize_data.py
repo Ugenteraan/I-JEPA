@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import cred
 from utils import apply_masks_over_image_patches
 from models.multiblock import MultiBlockMaskCollator
-from load_dataset import LoadDataset
+from load_dataset import LoadUnlabelledDataset
 from torchvision import transforms
 
 class VisualizeData:
@@ -32,7 +32,7 @@ class VisualizeData:
             #multiple number of workers seems to be throwing errors when using Deeplake's dataloader.
             self.dataloader = deeplake_module(token=deeplake_token, collate_func=collate_func, deeplake_dataset=deeplake_dataset, batch_size=visualize_batch_size, shuffle=visualize_shuffle)()
         else:
-            self.load_dataset_module = LoadDataset(dataset_folder_path=dataset_folder_path, image_size=image_size, transform=transforms.ToTensor())
+            self.load_dataset_module = LoadUnlabelledDataset(dataset_folder_path=dataset_folder_path, image_size=image_size, transform=transforms.ToTensor())
             self.dataloader = DataLoader(self.load_dataset_module, batch_size=visualize_batch_size, shuffle=visualize_shuffle, num_workers=num_workers, collate_fn=collate_func)
 
    
@@ -65,7 +65,6 @@ class VisualizeData:
             
 
             images = batch_data['collated_batch_data_images']
-            labels = batch_data['collated_batch_data_labels']
             pred_target_masks = batch_data['collated_masks_pred_target']
             context_masks = batch_data['collated_masks_context']
             
@@ -90,6 +89,6 @@ class VisualizeData:
 if __name__ == '__main__':
     #vd = VisualizeData(deeplake_module = DeepLakeDataset, deeplake_dataset='hub://activeloop/imagenet-train', visualize_batch_size=6, visualize_shuffle=False, deeplake_token=cred.DEEPLAKE_TOKEN, num_figs=50, image_height=224, image_width=224, patch_size=14, fig_savepath='./figures/')
     print("Executing...")
-    vd = VisualizeData(visualize_batch_size=4, visualize_shuffle=False, pred_masks_num=4, context_masks_num=1, num_workers=4, num_figs=10, image_size=224, patch_size=14, fig_savepath='./figures/', dataset_folder_path="/home/topiarypc/Projects/Attention-CNN-Visualization/image_dataset", collate_func=MultiBlockMaskCollator())
+    vd = VisualizeData(visualize_batch_size=4, visualize_shuffle=False, pred_masks_num=4, context_masks_num=1, num_workers=4, num_figs=10, image_size=224, patch_size=14, fig_savepath='./figures/', dataset_folder_path="./dog_breed_classification/ssl_train/", collate_func=MultiBlockMaskCollator())
 
     v = vd()

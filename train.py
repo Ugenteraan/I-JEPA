@@ -256,6 +256,7 @@ def train(args):
     ENCODER_NETWORK.train()
     PREDICTOR_NETWORK.train()
   
+    logger.info(f"Total data to train the SSL model: {DATASET_MODULE.__len__()}")
 
     for epoch_idx in range(START_EPOCH, END_EPOCH):
         logger.info(f"Training has started for epoch {epoch_idx}")

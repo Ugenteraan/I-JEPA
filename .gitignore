@@ -14,6 +14,7 @@ artifacts/**
 *.pth
 *.pt
 military_aircraft_detection/**
+dog_breed_classification/**
 .neptune/**
 
 #media

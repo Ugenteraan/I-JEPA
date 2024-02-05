@@ -4,7 +4,7 @@ data:
   batch_size: 2
   image_size: 224
   image_depth: 3
-  dataset_folder: "./military_aircraft_detection/downstream_classification/"
+  dataset_folder: "./dog_breed_classificationb/downstream/"
   num_workers: 8
   shuffle: true
   use_random_horizontal_flip: true
@@ -27,7 +27,7 @@ model:
   model_save_folder: ./artifacts/downstream/
   model_save_freq: 5 #save every N epoch.
   trained_encoder_predictor_model_name: i-jepa-military-aircraft
-  model_name: i-jepa-localization
+  model_name: i-jepa-dog-breed-classification
   transformer_depth: 10
   encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
   predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.

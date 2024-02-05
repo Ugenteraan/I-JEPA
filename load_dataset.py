@@ -45,7 +45,7 @@ class LoadUnlabelledDataset(Dataset):
 
         for x in glob.glob(folder_path + "**", recursive=True):
 
-            if not x.endswith('jpg'):
+            if not x.endswith(('.png', '.jpg', '.jpeg', '.bmp')):
                 continue
 
             image_path.append(x)
@@ -66,7 +66,9 @@ class LoadUnlabelledDataset(Dataset):
             idx = idx.tolist()
 
         image_path = self.image_path[idx]
-        self.logger.trace(f"Reading {image_path}...")
+
+        if self.logger is not None:
+            self.logger.trace(f"Reading {image_path}...")
 
         try:
             if self.image_depth == 1:
@@ -77,7 +79,9 @@ class LoadUnlabelledDataset(Dataset):
             #sometimes PIl throws truncated image error. Perhaps due to the image being too big? Hence the cv2 imread.
             image = Image.fromarray(image)
         except Exception as err:
-            self.logger.error(f"Error loading image: {err}")
+            if self.logger is not None:
+                self.logger.error(f"{image_path}")
+                self.logger.error(f"Error loading image: {err}")
             sys.exit()
 
         image = image.resize((self.image_size, self.image_size))
@@ -129,7 +133,7 @@ class LoadLabelledDataset(Dataset):
 
         for x in glob.glob(folder_path + "**", recursive=True):
 
-            if not x.endswith('jpg'):
+            if not x.endswith(('.png', '.jpg', '.jpeg', '.bmp')):
                 continue
 
             class_idx = self.classes.index(x.split('/')[-2])
