@@ -227,7 +227,7 @@ def downstream(args):
     
 
     OPTIMIZER = AdamW(DOWNSTREAM_HEAD_NETWORK.parameters(), lr=LEARNING_RATE)
-    CRITERION = torch.nn.CrossEntropyLoss().to(DEVICE)
+    CRITERION = torch.nn.CrossEntropyLoss()
 
     #scaler is used to scale the values in variables like state_dict, optimizer etc to bfloat16 type.
     if USE_BFLOAT16:
@@ -240,7 +240,7 @@ def downstream(args):
         
 
         DOWNSTREAM_HEAD_NETWORK.train()
-        train_epoch_loss = 0
+        train_epoch_loss = 0.0
         train_epoch_accuracy = []
 
         train_idx = None

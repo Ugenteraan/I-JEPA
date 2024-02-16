@@ -1,0 +1,5 @@
+12-02-2024 11:17:42:[INFO]:__main__:downstream:130 - Init Encoder model... - [0:00:05.145962]
+12-02-2024 11:17:42:[INFO]:__main__:downstream:146 - Init Predictor model... - [0:00:05.799276]
+12-02-2024 11:17:42:[ERROR]:utils:load_checkpoint_downstream:196 - Error loading the model! [Errno 2] No such file or directory: './artifacts/train/i-jepa-military-aircraft-latest.pth.tar' - [0:00:05.884184]
+12-02-2024 11:17:42:[INFO]:models.downstream_vit:__init__:158 - Removing the head of the trained predictor network... - [0:00:05.884806]
+12-02-2024 11:17:42:[SUCCESS]:models.downstream_vit:__init__:163 - Successfully removed the head!... - [0:00:05.884891]

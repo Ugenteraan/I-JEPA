@@ -275,6 +275,8 @@ def train(args):
             with torch.cuda.amp.autocast(dtype=torch.bfloat16, enabled=USE_BFLOAT16):
                 
                 #first we want to create the target. With no gradients involved.
+                #Remember that for the target generation, the image is fully encoded with the transformer first before applying the mask. 
+                #Whereas, for the context generation later, the image is first masked (after the patch embedding) before it's fed into the network.
                 with torch.no_grad():   
                     actual_target_embeddings  = TARGET_ENCODER_NETWORK(images)
                     actual_target_embeddings = apply_masks_over_embedded_patches(actual_target_embeddings, masks_pred_target)

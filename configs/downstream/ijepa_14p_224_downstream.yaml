@@ -4,7 +4,7 @@ data:
   batch_size: 2
   image_size: 224
   image_depth: 3
-  dataset_folder: "./dog_breed_classificationb/downstream/"
+  dataset_folder: "./dog_breed_classification/downstream/"
   num_workers: 8
   shuffle: true
   use_random_horizontal_flip: true
@@ -31,11 +31,11 @@ model:
   transformer_depth: 10
   encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
   predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
-  classification_embedding_dim: 512
+  classification_embedding_dim: 2048
   projection_keys_dim : 256
   projection_values_dim : 256
-  num_class: 46
-  feedforward_projection_dim : 1024 
+  num_class: 77
+  feedforward_projection_dim : 512 
   num_heads : 8
   attn_dropout_prob : 0.1
   feedforward_dropout_prob : 0.1
@@ -45,8 +45,8 @@ training:
   load_checkpoint: true
   load_checkpoint_epoch: null
   start_epoch : 0
-  end_epoch : 50
-  learning_rate : 1.0e-3
+  end_epoch : 30
+  learning_rate : 1.0e-5
   use_bfloat16: true
   use_neptune: true
 

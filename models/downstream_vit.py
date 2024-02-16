@@ -206,7 +206,7 @@ class DownstreamHead(nn.Module):
     '''This module is the replacement for the head that was taken away in the predictor's network.
     '''
 
-    def __init__(self, predictor_network_embedding_dim, classification_embedding_dim, num_class=46, device='cpu', logger=None):
+    def __init__(self, predictor_network_embedding_dim, classification_embedding_dim, num_class=77, device='cpu', logger=None):
 
         super(DownstreamHead, self).__init__()
 
