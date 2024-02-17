@@ -14,13 +14,13 @@ data:
       - 30
     translate: 
       - 0.1
-      - 0.3
+      - 0.4
     scale:
       - 0.1
-      - 0.3
+      - 0.4
   color_jitter:
-    brightness: 0.3
-    hue: 0.1
+    brightness: 0.4
+    hue: 0.2
 model:
   patch_size: 14 #in the train conf file, this param was in the 'mask' section.
   trained_encoder_predictor_saved_folder: ./artifacts/train/
@@ -46,9 +46,9 @@ training:
   load_checkpoint_epoch: null
   start_epoch : 0
   end_epoch : 30
-  learning_rate : 3.0e-5
+  learning_rate : 1.0e-5
   use_bfloat16: true
-  use_neptune: true
+  use_neptune: false
 
 
 
