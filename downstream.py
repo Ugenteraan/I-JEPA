@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, dataset, DataLoader
 
 from models.downstream_vit import VisionTransformerForPredictor as vitpredictor
 from models.downstream_vit import VisionTransformerForEncoder as vitencoder
-from models.downstream_vit import TrainedEncoderPredictor
+from models.downstream_vit import TrainedEncoder
 from models.downstream_vit import DownstreamHead
 
 
@@ -171,26 +171,24 @@ def downstream(args):
 
 
 
-    TRAINED_ENCODER_PREDICTOR_NETWORK = TrainedEncoderPredictor(trained_encoder=ENCODER_NETWORK,
-                                                                trained_predictor=PREDICTOR_NETWORK,
+    TRAINED_ENCODER_NETWORK = TrainedEncoder(trained_encoder=ENCODER_NETWORK,
                                                                 num_patches=NUM_PATCHES,
-                                                                predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
                                                                 device=DEVICE,
                                                                 logger=logger)
 
     #set the mode to eval.
-    TRAINED_ENCODER_PREDICTOR_NETWORK.train()
+    TRAINED_ENCODER_NETWORK.eval()
 
-    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
+    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM,
                                              classification_embedding_dim=CLASSIFICATION_EMBEDDING_DIM,
                                              num_class=NUM_CLASS,
                                              device=DEVICE,
                                              logger=logger)
 
 
-    summary(TRAINED_ENCODER_PREDICTOR_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
+    summary(TRAINED_ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
 
-    summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(PREDICTOR_NETWORK_EMBEDDING_DIM)))
+    summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(ENCODER_NETWORK_EMBEDDING_DIM)))
 
 
     #------------------------ Transforms settings.
@@ -226,7 +224,7 @@ def downstream(args):
     TEST_DATASET_LOADER = DataLoader(TEST_DATASET_MODULE, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS) 
     
 
-    OPTIMIZER = AdamW(list(TRAINED_ENCODER_PREDICTOR_NETWORK.parameters()) + list(DOWNSTREAM_HEAD_NETWORK.parameters()), lr=LEARNING_RATE)
+    OPTIMIZER = AdamW(DOWNSTREAM_HEAD_NETWORK.parameters(), lr=LEARNING_RATE)
     CRITERION = torch.nn.CrossEntropyLoss()
 
     #scaler is used to scale the values in variables like state_dict, optimizer etc to bfloat16 type.
@@ -238,7 +236,7 @@ def downstream(args):
 
         logger.info(f"Training has started for epoch {epoch_idx}")
         
-        TRAINED_ENCODER_PREDICTOR_NETWORK.train()
+        TRAINED_ENCODER_NETWORK.eval()
         DOWNSTREAM_HEAD_NETWORK.train()
         train_epoch_loss = 0.0
         train_epoch_accuracy = []
@@ -253,7 +251,7 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
+                feature_embedding = TRAINED_ENCODER_NETWORK(batch_x)
                 prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)
@@ -281,7 +279,7 @@ def downstream(args):
 
 
         logger.info(f"Testing has started for epoch {epoch_idx}")
-        TRAINED_ENCODER_PREDICTOR_NETWORK.eval()
+        # TRAINED_ENCODER_NETWORK.eval()
         DOWNSTREAM_HEAD_NETWORK.eval()
 
         test_epoch_loss = 0
@@ -297,7 +295,7 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
+                feature_embedding = TRAINED_ENCODER_NETWORK(batch_x)
                 prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)

@@ -1,10 +1,10 @@
 #Configurations
 env: development
 data:
-  batch_size: 128
+  batch_size: 256
   image_size: 224
   image_depth: 3
-  dataset_folder: "./debug_dataset/"
+  dataset_folder: "./dog_breed_classification/downstream/"
   num_workers: 8
   shuffle: true
   use_random_horizontal_flip: true
@@ -26,16 +26,16 @@ model:
   trained_encoder_predictor_saved_folder: ./artifacts/train/
   model_save_folder: ./artifacts/downstream/
   model_save_freq: 10 #save every N epoch.
-  trained_encoder_predictor_model_name: i-jepa-military-aircraft
+  trained_encoder_predictor_model_name: i-jepa-dog-breed
   model_name: i-jepa-dog-breed-classification
-  transformer_depth: 10
-  encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
-  predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
-  classification_embedding_dim: 2048
+  transformer_depth: 8
+  encoder_network_embedding_dim: 256 #embedding dimension to be used throughout the transformer blocks in the encoder network.
+  predictor_network_embedding_dim: 256 #embedding dimension to be used throughout the transformer blocks in the predictor network.
+  classification_embedding_dim: 1024
   projection_keys_dim : 256
   projection_values_dim : 256
   num_class: 77
-  feedforward_projection_dim : 512 
+  feedforward_projection_dim : 1024 
   num_heads : 8
   attn_dropout_prob : 0.1
   feedforward_dropout_prob : 0.1
@@ -46,7 +46,7 @@ training:
   load_checkpoint_epoch: null
   start_epoch : 0
   end_epoch : 30
-  learning_rate : 1.0e-5
+  learning_rate : 1.0e-4
   use_bfloat16: true
   use_neptune: false
 

@@ -138,18 +138,18 @@ class TrainedEncoderPredictor(nn.Module):
         self.device = device
         
 
-        # #disable gradient flow in both the trained networks.
-        # for param in self.trained_patch_embed_encoder.parameters():
-        #     param.requires_grad = False
+        #disable gradient flow in both the trained networks.
+        for param in self.trained_patch_embed_encoder.parameters():
+            param.requires_grad = False
 
-        # for param in self.trained_encoder_transformer_blocks.parameters():
-        #     param.requires_grad = False
+        for param in self.trained_encoder_transformer_blocks.parameters():
+            param.requires_grad = False
 
-        # for param in self.trained_patch_embed_predictor.parameters():
-        #     param.requires_grad = False
+        for param in self.trained_patch_embed_predictor.parameters():
+            param.requires_grad = False
 
-        # for param in self.trained_predictor_transformer_blocks.parameters():
-        #     param.requires_grad = False
+        for param in self.trained_predictor_transformer_blocks.parameters():
+            param.requires_grad = False
 
 
 
@@ -202,11 +202,81 @@ class TrainedEncoderPredictor(nn.Module):
 
 
 
+class TrainedEncoder(nn.Module):
+    '''In this module, we add positional embeddings to the encoder and predictor as they are not included in the saved .pth file and remove the final predictor's head.
+       This would make it easier to set the mode of these two models to eval mode.
+    '''
+
+    def __init__(self, trained_encoder, num_patches, device='cpu', logger=None):
+
+        super(TrainedEncoder, self).__init__()
+
+        # #change the modes to eval first before anything.
+        # trained_encoder.eval()
+        # trained_predictor.eval()
+
+        #we first have to separate the patch embedding from the rest of the trained encoder. The reason is to add the positional embedding tensors before the input is given to the rest of the transformer blocks.
+        self.trained_patch_embed_encoder = list(trained_encoder.children())[0]
+        self.trained_encoder_transformer_blocks = torch.nn.Sequential(*list(trained_encoder.children())[1:])
+
+
+
+        self.num_patches = num_patches
+        self.device = device
+        
+
+        #disable gradient flow in both the trained networks.
+        for param in self.trained_patch_embed_encoder.parameters():
+            param.requires_grad = False
+
+        for param in self.trained_encoder_transformer_blocks.parameters():
+            param.requires_grad = False
+
+
+   
+
+    def forward(self, x):
+        
+        
+        #--------Starting of the trained encoder process.
+        x = self.trained_patch_embed_encoder(x)
+
+        #generate the positional embedding tokens
+        pos_embed_module = PositionalEncoder(token_length=x.size(1), output_dim=x.size(2), n=10000, device=self.device)
+        pos_embedding_tensor = pos_embed_module()
+
+
+        #concat the pos embedding tensor the patch embedding.
+        x = x + pos_embedding_tensor
+
+        # self.trained_encoder_transformer_blocks.eval()
+        x = self.trained_encoder_transformer_blocks(x)
+
+        #--------Ending of the trained encoder process.
+
+        # ######################################################
+
+        # #--------Starting of the trained predictor process.
+
+        # x = self.trained_patch_embed_predictor(x)
+
+        # pos_embed_module = PositionalEncoder(token_length=self.num_patches, output_dim=self.predictor_network_embedding_dim, n=10000, device=self.device)
+        # pos_embedding_tensor = pos_embed_module()
+
+        # x = x + pos_embedding_tensor
+
+        # # self.trained_predictor_transformer_blocks.eval()
+        # x = self.trained_predictor_transformer_blocks(x)
+
+        return x
+
+
+
 class DownstreamHead(nn.Module):
     '''This module is the replacement for the head that was taken away in the predictor's network.
     '''
 
-    def __init__(self, predictor_network_embedding_dim, classification_embedding_dim, num_class=77, device='cpu', logger=None):
+    def __init__(self, encoder_network_embedding_dim, classification_embedding_dim, num_class=77, device='cpu', logger=None):
 
         super(DownstreamHead, self).__init__()
 
@@ -217,8 +287,8 @@ class DownstreamHead(nn.Module):
         #new classification head to be trained.
         
         self.classification_head = nn.Sequential(einops_torch.Reduce('b n e -> b e', reduction='mean'),
-                                                 nn.LayerNorm(predictor_network_embedding_dim),
-                                                 nn.Linear(predictor_network_embedding_dim, classification_embedding_dim),
+                                                 nn.LayerNorm(encoder_network_embedding_dim),
+                                                 nn.Linear(encoder_network_embedding_dim, classification_embedding_dim),
                                                  nn.GELU(),
                                                  nn.Linear(classification_embedding_dim, num_class)).to(self.device)
 
