@@ -1,31 +1,31 @@
 #Configurations
 env: development
 data:
-  batch_size: 2
+  batch_size: 128
   image_size: 224
   image_depth: 3
-  dataset_folder: "./dog_breed_classification/downstream/"
+  dataset_folder: "./debug_dataset/"
   num_workers: 8
   shuffle: true
   use_random_horizontal_flip: true
   random_affine:
     degrees: 
-      - 20
-      - 50
+      - -30
+      - 30
     translate: 
       - 0.1
       - 0.3
     scale:
-      - 0.4
-      - 0.6
+      - 0.1
+      - 0.3
   color_jitter:
-    brightness: 0.5
-    hue: 0.3
+    brightness: 0.3
+    hue: 0.1
 model:
   patch_size: 14 #in the train conf file, this param was in the 'mask' section.
   trained_encoder_predictor_saved_folder: ./artifacts/train/
   model_save_folder: ./artifacts/downstream/
-  model_save_freq: 5 #save every N epoch.
+  model_save_freq: 10 #save every N epoch.
   trained_encoder_predictor_model_name: i-jepa-military-aircraft
   model_name: i-jepa-dog-breed-classification
   transformer_depth: 10
@@ -42,11 +42,11 @@ model:
 
 training:
   device : gpu
-  load_checkpoint: true
+  load_checkpoint: false
   load_checkpoint_epoch: null
   start_epoch : 0
   end_epoch : 30
-  learning_rate : 1.0e-5
+  learning_rate : 3.0e-5
   use_bfloat16: true
   use_neptune: true
 

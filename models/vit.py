@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch.nn as nn
 import torch
 import einops
+import einops.layers.torch as einops_torch
 
 from .patch_embedding import PatchEmbedding
 from .positional_encoder import PositionalEncoder
@@ -91,7 +92,7 @@ class VisionTransformerForPredictor(nn.Module):
 
 class VisionTransformerForEncoder(nn.Module):
 
-    def __init__(self, image_size, patch_size, image_depth, encoder_network_embedding_dim, device, **kwargs):
+    def __init__(self, image_size, patch_size, image_depth, encoder_network_embedding_dim, device, num_classes, **kwargs):
         '''Vision Transformer to be used as the encoder for both the training and target images. There is no CLS token since there's no classification going on here.
            MLP head is also not necessary for this ViT since we only want to produce embeddings.
         '''
@@ -114,7 +115,11 @@ class VisionTransformerForEncoder(nn.Module):
                                                           ).to(device) 
 
         #apply layernorm on the output of the transformer blocks.
-        self.final_layernorm = nn.LayerNorm(self.encoder_network_embedding_dim).to(device)
+        self.classification_head = nn.Sequential(einops_torch.Reduce('b n e -> b e', reduction='mean'),
+                                                 nn.LayerNorm(self.encoder_network_embedding_dim),
+                                                 nn.Linear(self.encoder_network_embedding_dim, self.encoder_network_embedding_dim*2),
+                                                 nn.GELU(),
+                                                 nn.Linear(self.encoder_network_embedding_dim*2, num_classes))
 
 
         
@@ -138,7 +143,7 @@ class VisionTransformerForEncoder(nn.Module):
             x = apply_masks_over_embedded_patches(x, masks)
 
         x = self.transformer_blocks(x)
-        x = self.final_layernorm(x)
+        x = self.classification_head(x)
 
         return x
         

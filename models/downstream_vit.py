@@ -138,18 +138,18 @@ class TrainedEncoderPredictor(nn.Module):
         self.device = device
         
 
-        #disable gradient flow in both the trained networks.
-        for param in self.trained_patch_embed_encoder.parameters():
-            param.requires_grad = False
+        # #disable gradient flow in both the trained networks.
+        # for param in self.trained_patch_embed_encoder.parameters():
+        #     param.requires_grad = False
 
-        for param in self.trained_encoder_transformer_blocks.parameters():
-            param.requires_grad = False
+        # for param in self.trained_encoder_transformer_blocks.parameters():
+        #     param.requires_grad = False
 
-        for param in self.trained_patch_embed_predictor.parameters():
-            param.requires_grad = False
+        # for param in self.trained_patch_embed_predictor.parameters():
+        #     param.requires_grad = False
 
-        for param in self.trained_predictor_transformer_blocks.parameters():
-            param.requires_grad = False
+        # for param in self.trained_predictor_transformer_blocks.parameters():
+        #     param.requires_grad = False
 
 
 
@@ -179,7 +179,7 @@ class TrainedEncoderPredictor(nn.Module):
         #concat the pos embedding tensor the patch embedding.
         x = x + pos_embedding_tensor
 
-        self.trained_encoder_transformer_blocks.eval()
+        # self.trained_encoder_transformer_blocks.eval()
         x = self.trained_encoder_transformer_blocks(x)
 
         #--------Ending of the trained encoder process.
@@ -195,7 +195,7 @@ class TrainedEncoderPredictor(nn.Module):
 
         x = x + pos_embedding_tensor
 
-        self.trained_predictor_transformer_blocks.eval()
+        # self.trained_predictor_transformer_blocks.eval()
         x = self.trained_predictor_transformer_blocks(x)
 
         return x

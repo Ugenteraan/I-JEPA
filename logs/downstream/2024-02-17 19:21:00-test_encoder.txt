@@ -1,0 +1,1 @@
+17-02-2024 19:21:40:[INFO]:__main__:downstream:131 - Init Encoder model... - [0:00:00.802953]

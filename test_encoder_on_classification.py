@@ -1,5 +1,6 @@
-'''Module to downstream a trained I-JEPA's predictor model.
+'''This module here is intended to test/debug the capability of the encoder network purely on the classification problem.
 '''
+
 
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,10 +17,10 @@ from torchvision import transforms
 from torch.utils.data import Dataset, dataset, DataLoader
 
 
-from models.downstream_vit import VisionTransformerForPredictor as vitpredictor
-from models.downstream_vit import VisionTransformerForEncoder as vitencoder
-from models.downstream_vit import TrainedEncoderPredictor
-from models.downstream_vit import DownstreamHead
+# from models.downstream_vit import VisionTransformerForPredictor as vitpredictor
+from models.vit import VisionTransformerForEncoder as vitencoder
+# from models.downstream_vit import TrainedEncoderPredictor
+# from models.downstream_vit import DownstreamHead
 
 
 from utils import load_checkpoint_downstream, calculate_accuracy
@@ -112,15 +113,15 @@ def downstream(args):
     USE_NEPTUNE = config['training']['use_neptune']
 
     
-    if USE_NEPTUNE:
-        import neptune 
+    # if USE_NEPTUNE:
+    #     import neptune 
 
-        NEPTUNE_RUN = neptune.init_run(
-                                       project=cred.NEPTUNE_PROJECT,
-                                       api_token=cred.NEPTUNE_API_TOKEN
-                                       )
+    #     NEPTUNE_RUN = neptune.init_run(
+    #                                    project=cred.NEPTUNE_PROJECT,
+    #                                    api_token=cred.NEPTUNE_API_TOKEN
+    #                                    )
         
-        NEPTUNE_RUN['parameters'] = neptune.utils.stringify_unsupported(config)
+    #     NEPTUNE_RUN['parameters'] = neptune.utils.stringify_unsupported(config)
 
     NUM_PATCHES = (IMAGE_SIZE/PATCH_SIZE)**2 #for the initialization of param in predictor network.
 
@@ -133,64 +134,65 @@ def downstream(args):
                          image_depth=IMAGE_DEPTH, 
                          encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
                          device=DEVICE,
+                         num_classes=NUM_CLASS,
                          transformer_network_depth=TRANSFORMER_DEPTH,
                          projection_keys_dim=PROJECTION_KEYS_DIM,
                          projection_values_dim=PROJECTION_VALUES_DIM,
                          num_heads=NUM_HEADS,
                          attn_dropout_prob=ATTN_DROPOUT_PROB,
                          feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
-                         feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)  
+                         feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB).to(DEVICE)  
 
     
     
-    logger.info("Init Predictor model...")
-    PREDICTOR_NETWORK = vitpredictor(input_dim=ENCODER_NETWORK_EMBEDDING_DIM, #the input dim for the predictor network is the output dim from the encoder network.
-                            predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
-                            device=DEVICE,
-                            transformer_network_depth=TRANSFORMER_DEPTH,
-                            projection_keys_dim=PROJECTION_KEYS_DIM,
-                            projection_values_dim=PROJECTION_VALUES_DIM,
-                            num_heads=NUM_HEADS,
-                            attn_dropout_prob=ATTN_DROPOUT_PROB,
-                            feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
-                            feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
+    # logger.info("Init Predictor model...")
+    # PREDICTOR_NETWORK = vitpredictor(input_dim=ENCODER_NETWORK_EMBEDDING_DIM, #the input dim for the predictor network is the output dim from the encoder network.
+    #                         predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
+    #                         device=DEVICE,
+    #                         transformer_network_depth=TRANSFORMER_DEPTH,
+    #                         projection_keys_dim=PROJECTION_KEYS_DIM,
+    #                         projection_values_dim=PROJECTION_VALUES_DIM,
+    #                         num_heads=NUM_HEADS,
+    #                         attn_dropout_prob=ATTN_DROPOUT_PROB,
+    #                         feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
+    #                         feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
 
 
-    #REMEMBER WE DO NOT NEED THE TARGET ENCODER IN THIS MODULE.
-    #Make sure the checkpoints are placed at the appropriate location.
-    #We will load the model as is first before performing any changes for the downstream task.
-    ENCODER_NETWORK, PREDICTOR_NETWORK = load_checkpoint_downstream(encoder_network=ENCODER_NETWORK,
-                                                                    predictor_network=PREDICTOR_NETWORK,
-                                                                    trained_model_folder=TRAINED_ENCODER_PREDICTOR_SAVED_FOLDER,
-                                                                    trained_model_name=TRAINED_ENCODER_PREDICTOR_MODEL_NAME,
-                                                                    load_checkpoint_epoch=None, 
-                                                                    strict=True, 
-                                                                    logger=logger)
+    # #REMEMBER WE DO NOT NEED THE TARGET ENCODER IN THIS MODULE.
+    # #Make sure the checkpoints are placed at the appropriate location.
+    # #We will load the model as is first before performing any changes for the downstream task.
+    # ENCODER_NETWORK, PREDICTOR_NETWORK = load_checkpoint_downstream(encoder_network=ENCODER_NETWORK,
+    #                                                                 predictor_network=PREDICTOR_NETWORK,
+    #                                                                 trained_model_folder=TRAINED_ENCODER_PREDICTOR_SAVED_FOLDER,
+    #                                                                 trained_model_name=TRAINED_ENCODER_PREDICTOR_MODEL_NAME,
+    #                                                                 load_checkpoint_epoch=None, 
+    #                                                                 strict=True, 
+    #                                                                 logger=logger)
 
 
 
 
 
-    TRAINED_ENCODER_PREDICTOR_NETWORK = TrainedEncoderPredictor(trained_encoder=ENCODER_NETWORK,
-                                                                trained_predictor=PREDICTOR_NETWORK,
-                                                                num_patches=NUM_PATCHES,
-                                                                predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
-                                                                device=DEVICE,
-                                                                logger=logger)
+    # TRAINED_ENCODER_PREDICTOR_NETWORK = TrainedEncoderPredictor(trained_encoder=ENCODER_NETWORK,
+    #                                                             trained_predictor=PREDICTOR_NETWORK,
+    #                                                             num_patches=NUM_PATCHES,
+    #                                                             predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
+    #                                                             device=DEVICE,
+    #                                                             logger=logger)
 
     #set the mode to eval.
-    TRAINED_ENCODER_PREDICTOR_NETWORK.train()
+    # TRAINED_ENCODER_PREDICTOR_NETWORK.train()
 
-    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
-                                             classification_embedding_dim=CLASSIFICATION_EMBEDDING_DIM,
-                                             num_class=NUM_CLASS,
-                                             device=DEVICE,
-                                             logger=logger)
+    # DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
+    #                                          classification_embedding_dim=CLASSIFICATION_EMBEDDING_DIM,
+    #                                          num_class=NUM_CLASS,
+    #                                          device=DEVICE,
+    #                                          logger=logger)
 
 
-    summary(TRAINED_ENCODER_PREDICTOR_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
+    summary(ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
 
-    summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(PREDICTOR_NETWORK_EMBEDDING_DIM)))
+    # summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(PREDICTOR_NETWORK_EMBEDDING_DIM)))
 
 
     #------------------------ Transforms settings.
@@ -225,8 +227,9 @@ def downstream(args):
 
     TEST_DATASET_LOADER = DataLoader(TEST_DATASET_MODULE, batch_size=BATCH_SIZE, shuffle=SHUFFLE, num_workers=NUM_WORKERS) 
     
+    logger.info(f"Total train dataset: {len(TRAIN_DATASET_MODULE)}")
 
-    OPTIMIZER = AdamW(list(TRAINED_ENCODER_PREDICTOR_NETWORK.parameters()) + list(DOWNSTREAM_HEAD_NETWORK.parameters()), lr=LEARNING_RATE)
+    OPTIMIZER = AdamW(ENCODER_NETWORK.parameters(), lr=LEARNING_RATE)
     CRITERION = torch.nn.CrossEntropyLoss()
 
     #scaler is used to scale the values in variables like state_dict, optimizer etc to bfloat16 type.
@@ -238,8 +241,8 @@ def downstream(args):
 
         logger.info(f"Training has started for epoch {epoch_idx}")
         
-        TRAINED_ENCODER_PREDICTOR_NETWORK.train()
-        DOWNSTREAM_HEAD_NETWORK.train()
+        # TRAINED_ENCODER_PREDICTOR_NETWORK.train()
+        ENCODER_NETWORK.train()
         train_epoch_loss = 0.0
         train_epoch_accuracy = []
 
@@ -253,8 +256,8 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
-                prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
+                prediction = ENCODER_NETWORK(batch_x)
+                # prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)
 
@@ -281,8 +284,8 @@ def downstream(args):
 
 
         logger.info(f"Testing has started for epoch {epoch_idx}")
-        TRAINED_ENCODER_PREDICTOR_NETWORK.eval()
-        DOWNSTREAM_HEAD_NETWORK.eval()
+        # TRAINED_ENCODER_PREDICTOR_NETWORK.eval()
+        ENCODER_NETWORK.eval()
 
         test_epoch_loss = 0
         test_epoch_accuracy = []
@@ -297,8 +300,8 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
-                prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
+                prediction = ENCODER_NETWORK(batch_x)
+                # prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)z
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)
 
@@ -314,11 +317,11 @@ def downstream(args):
         logger.info(f"Test epoch loss at epoch {epoch_idx}: {test_epoch_loss}")
         logger.info(f"Test epoch accuracy at epoch {epoch_idx}: {test_epoch_accuracy}")
 
-        if USE_NEPTUNE:
-            NEPTUNE_RUN['train/loss_per_epoch'].append(train_epoch_loss)
-            NEPTUNE_RUN['train/accuracy_per_epoch'].append(train_epoch_accuracy)
-            NEPTUNE_RUN['test/loss_per_epoch'].append(test_epoch_loss)
-            NEPTUNE_RUN['test/accuracy_per_epoch'].append(test_epoch_accuracy)
+        # if USE_NEPTUNE:
+        #     NEPTUNE_RUN['train/loss_per_epoch'].append(train_epoch_loss)
+        #     NEPTUNE_RUN['train/accuracy_per_epoch'].append(train_epoch_accuracy)
+        #     NEPTUNE_RUN['test/loss_per_epoch'].append(test_epoch_loss)
+        #     NEPTUNE_RUN['test/accuracy_per_epoch'].append(test_epoch_accuracy)
 
 
 

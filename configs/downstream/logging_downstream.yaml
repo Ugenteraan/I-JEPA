@@ -2,7 +2,7 @@
 
 disable_default_loggers: true
 log_dir: ./logs/downstream/ 
-log_filename: downstream.txt
+log_filename: test_encoder.txt
 
 formatters:
   development:
