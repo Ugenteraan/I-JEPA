@@ -102,6 +102,7 @@ def train(args):
     MODEL_SAVE_FOLDER = config['model']['model_save_folder']
     MODEL_NAME = config['model']['model_name']
     MODEL_SAVE_FREQ = config['model']['model_save_freq']
+    N_SAVED_MODEL_TO_KEEP = config['model']['N_saved_model_to_keep']
     TRANSFORMER_DEPTH = config['model']['transformer_depth']
     ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder_network_embedding_dim']
     PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor_network_embedding_dim']
@@ -174,7 +175,8 @@ def train(args):
                             attn_dropout_prob=ATTN_DROPOUT_PROB,
                             feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
                             feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
-    
+
+
     #to be used to generate the target embeddings. This network shares the same parameters as the encoder network.
     TARGET_ENCODER_NETWORK = copy.deepcopy(ENCODER_NETWORK) #creates an independent copy of the entire object hierarchy.    
 
@@ -266,8 +268,27 @@ def train(args):
         for idx, data in tqdm(enumerate(DATASET_LOADER)):
 
             images = data['collated_batch_data_images'].to(DEVICE)
-            masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=DEVICE)
-            masks_ctxt = torch.tensor(np.asarray(data['collated_masks_context']), dtype=torch.int64, device=DEVICE)
+
+            #Remember, the masks are shaped in [num of masks, batch size, mask indices]. So, the loop will go on for only the defined number of masks.
+            #The loop is necessary to convert the mask arrays into tensor. Converting using numpy in between doesn't work since the upgrade of numpy version (1.24.3). Previous working version was 1.19.0. I believe it's the version that's causing this.
+            # masks_pred_target = torch.tensor(np.asarray(data['collated_masks_pred_target']), dtype=torch.int64, device=DEVICE) - THIS WAS THE PREVIOUS WAY.
+            masks_pred_target = None
+            for x in data['collated_masks_pred_target']:
+
+                if masks_pred_target is None:
+                    masks_pred_target = x.type(torch.int64).clone().detach().unsqueeze(0).to(DEVICE)
+                else:
+                    masks_pred_target = torch.cat((masks_pred_target, x.type(torch.int64).clone().detach().unsqueeze(0).to(DEVICE)), dim=0)
+
+            # masks_ctxt = torch.tensor(np.asarray(data['collated_masks_context']), dtype=torch.int64, device=DEVICE)
+            masks_ctxt = None
+            for x in data['collated_masks_context']:
+
+                if masks_ctxt is None:
+                    masks_ctxt = x.type(torch.int64).unsqueeze(0).to(DEVICE).clone().detach()
+                else:
+                    masks_ctxt = torch.cat((masks_ctxt, x.type(torch.int64).clone().detach().unsqueeze(0).to(DEVICE)), dim=0)
+
 
             batch_size = len(images)
     
@@ -338,6 +359,7 @@ def train(args):
                             scaler=SCALER, 
                             epoch=epoch_idx, 
                             loss=loss,
+                            N_models_to_keep=N_SAVED_MODEL_TO_KEEP,
                             logger=logger)
     
     if USE_NEPTUNE:

@@ -1,6 +1,7 @@
 '''Helper functions to be used throughout the project.
 '''
-
+import os
+import glob
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -105,7 +106,28 @@ def loss_fn(prediction, target):
     return loss
 
 
-def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch, loss, logger=None):
+def remove_old_models(N_models_to_keep, model_save_folder):
+    '''Remove the old saved models based on the given paramters.
+    '''
+
+    all_models = []
+    for x in glob.glob(f'{model_save_folder.rstrip("/")}/**'):
+        all_models.append(x)
+
+
+    if len(all_models) > N_models_to_keep:
+        all_models.sort(key=lambda x: os.path.getctime(x)) #sorts the files based on their creation time.
+        unwanted_models = all_models[:-1*N_models_to_keep]
+
+        if len(unwanted_models) != 0:
+            #delete the old models.
+            for x in unwanted_models:
+                os.remove(x)
+
+    return None
+
+
+def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch, loss, N_models_to_keep, logger=None):
     '''Save model checkpoint.
     '''
     save_dict = {
@@ -122,6 +144,10 @@ def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
         torch.save(save_dict, f"{model_save_folder.rstrip('/')}/{model_name}-checkpoint-ep-{epoch}.pth.tar") 
         torch.save(save_dict, f"{model_save_folder.rstrip('/')}/{model_name}-latest.pth.tar") 
         logger.info(f"Model checkpoint save for epoch {epoch} is successful!")
+
+        #remove the unwanted models.
+        remove_old_models(N_models_to_keep=N_models_to_keep, model_save_folder=model_save_folder)
+
     except Exception as err:
         logger.error(f"Model checkpoint save for epoch {epoch} has failed! {err}")
 
@@ -170,6 +196,7 @@ def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
         
 
 
+
             
 
 def load_checkpoint_downstream(trained_model_folder, trained_model_name, encoder_network, predictor_network, load_checkpoint_epoch=None, strict=False, logger=None):
@@ -189,6 +216,7 @@ def load_checkpoint_downstream(trained_model_folder, trained_model_name, encoder
 
         msg = predictor_network.load_state_dict(checkpoint['predictor_network'], strict=strict)
         logger.info(f"Loaded pretrained predictor network with msg: {msg}")
+
 
 
     

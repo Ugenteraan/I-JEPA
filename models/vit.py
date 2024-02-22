@@ -16,12 +16,13 @@ from utils import apply_masks_over_embedded_patches
 
 class VisionTransformerForPredictor(nn.Module):
 
-    def __init__(self, input_dim, num_patches, predictor_network_embedding_dim, device, **kwargs):
+    def __init__(self, input_dim, num_patches, predictor_network_embedding_dim, device, init_std=0.02, **kwargs):
         '''Vision Transformer to be used as the predictor. The output from the predictor will be in the same dimension as the input since the output is trying to predict the embedding of the target images.
         '''
 
         super(VisionTransformerForPredictor, self).__init__()
 
+        self.init_std = init_std
         self.predictor_embed = nn.Linear(input_dim, predictor_network_embedding_dim).to(device) #to project the incoming embedding to the predictor's embedding dimension.
         self.mask_token = nn.Parameter(torch.zeros(1, 1, predictor_network_embedding_dim)).to(device) #learnable token for the masks.
         self.device = device
@@ -40,6 +41,26 @@ class VisionTransformerForPredictor(nn.Module):
 
         self.predictor_projector = nn.Linear(self.predictor_network_embedding_dim, input_dim).to(device) 
 
+        #weight initializations. We have to init for mask token separately since there _init_weights_ func don't deal with nn.parameters.
+        self._init_weights_(self.mask_token)
+        self.apply(self._init_weights_) #init the models.
+
+
+    def _init_weights_(self, m):
+        '''Weight init using truncated normal distribution: https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
+        '''
+
+        if isinstance(m, nn.Linear):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
 
 
     def forward(self, x, masks_ctxt, masks_pred_target):
@@ -91,7 +112,7 @@ class VisionTransformerForPredictor(nn.Module):
 
 class VisionTransformerForEncoder(nn.Module):
 
-    def __init__(self, image_size, patch_size, image_depth, encoder_network_embedding_dim, device, **kwargs):
+    def __init__(self, image_size, patch_size, image_depth, encoder_network_embedding_dim, device, init_std=0.02, **kwargs):
         '''Vision Transformer to be used as the encoder for both the training and target images. There is no CLS token since there's no classification going on here.
            MLP head is also not necessary for this ViT since we only want to produce embeddings.
         '''
@@ -104,6 +125,7 @@ class VisionTransformerForEncoder(nn.Module):
         self.patch_embedding_dim = self.image_depth*self.patch_size**2
         self.encoder_network_embedding_dim = encoder_network_embedding_dim
         self.device = device
+        self.init_std = init_std
 
         self.patch_embed = PatchEmbedding(patch_size=self.patch_size, image_depth=self.image_depth, embedding_dim=self.encoder_network_embedding_dim, device=self.device).to(device)
 
@@ -117,7 +139,23 @@ class VisionTransformerForEncoder(nn.Module):
         self.final_layernorm = nn.LayerNorm(self.encoder_network_embedding_dim).to(device)
 
 
-        
+        self.apply(self._init_weights_)
+
+    def _init_weights_(self, m):
+        '''Weight init using truncated normal distribution: https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
+        '''
+
+        if isinstance(m, nn.Linear):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
     
     def forward(self, x, masks=None):
         '''x: Torch image [batch size, num_channels, image_size, image_size]
