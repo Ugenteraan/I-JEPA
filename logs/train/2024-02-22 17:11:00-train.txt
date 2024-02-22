@@ -46,3 +46,6 @@
 22-02-2024 22:28:39:[INFO]:__main__:train:264 - Training has started for epoch 15 - [5:17:27.615588]
 22-02-2024 22:49:47:[INFO]:__main__:train:345 - The loss at epoch 15 is 0.0004564966345590449 - [5:38:35.350198]
 22-02-2024 22:49:47:[INFO]:__main__:train:264 - Training has started for epoch 16 - [5:38:35.350885]
+22-02-2024 23:11:23:[INFO]:__main__:train:345 - The loss at epoch 16 is 0.000592861194540717 - [6:00:11.216473]
+22-02-2024 23:11:23:[INFO]:utils:save_checkpoint:146 - Model checkpoint save for epoch 16 is successful! - [6:00:11.943109]
+22-02-2024 23:11:23:[INFO]:__main__:train:264 - Training has started for epoch 17 - [6:00:11.943882]
