@@ -78,9 +78,9 @@ class VisionTransformerForEncoder(nn.Module):
 
         #use the nn.sequential module to build the transformer network with the specified depth.
         self.transformer_blocks = TransformerEncoderNetwork(device=device,
-                                                          input_dim=self.encoder_network_embedding_dim,
-                                                          **kwargs
-                                                          ).to(device) 
+                                                            input_dim=self.encoder_network_embedding_dim,
+                                                            **kwargs
+                                                            ).to(device)
 
         #apply layernorm on the output of the transformer blocks.
         self.final_layernorm = nn.LayerNorm(self.encoder_network_embedding_dim).to(device)
@@ -111,30 +111,22 @@ class VisionTransformerForEncoder(nn.Module):
 
 
 
-class TrainedEncoderPredictor(nn.Module):
-    '''In this module, we add positional embeddings to the encoder and predictor as they are not included in the saved .pth file and remove the final predictor's head.
-       This would make it easier to set the mode of these two models to eval mode.
+class TrainedEncoder(nn.Module):
+    '''In this module, we add positional embeddings to the encoder as they are not included in the saved .pth file.
     '''
 
-    def __init__(self, trained_encoder, trained_predictor, num_patches, predictor_network_embedding_dim,remove_head=True, device='cpu', logger=None):
+    def __init__(self, trained_encoder, encoder_network_embedding_dim, device='cpu', logger=None):
 
-        super(TrainedEncoderPredictor, self).__init__()
+        super(TrainedEncoder, self).__init__()
 
-        # #change the modes to eval first before anything.
-        # trained_encoder.eval()
-        # trained_predictor.eval()
+        # #change the mode to eval first before anything.
+        trained_encoder.eval()
 
         #we first have to separate the patch embedding from the rest of the trained encoder. The reason is to add the positional embedding tensors before the input is given to the rest of the transformer blocks.
         self.trained_patch_embed_encoder = list(trained_encoder.children())[0]
         self.trained_encoder_transformer_blocks = torch.nn.Sequential(*list(trained_encoder.children())[1:])
 
-        self.trained_predictor = trained_predictor
-
-        self.trained_patch_embed_predictor = list(trained_predictor.children())[0]
-        self.trained_predictor_transformer_blocks = torch.nn.Sequential(*list(trained_predictor.children())[1:])
-
-        self.predictor_network_embedding_dim = predictor_network_embedding_dim
-        self.num_patches = num_patches
+        self.encoder_network_embedding_dim = encoder_network_embedding_dim
         self.device = device
         
 
@@ -145,22 +137,6 @@ class TrainedEncoderPredictor(nn.Module):
         for param in self.trained_encoder_transformer_blocks.parameters():
             param.requires_grad = False
 
-        for param in self.trained_patch_embed_predictor.parameters():
-            param.requires_grad = False
-
-        for param in self.trained_predictor_transformer_blocks.parameters():
-            param.requires_grad = False
-
-
-
-        if remove_head:
-            if logger is not None:
-                logger.info("Removing the head of the trained predictor network...")
-    
-            self.trained_predictor_transformer_blocks = torch.nn.Sequential(*list(self.trained_predictor_transformer_blocks.children())[:-1]) #remove the last layer.
-
-            if logger is not None:
-                logger.success("Successfully removed the head!...")
 
 
    
@@ -186,17 +162,6 @@ class TrainedEncoderPredictor(nn.Module):
 
         ######################################################
 
-        #--------Starting of the trained predictor process.
-
-        x = self.trained_patch_embed_predictor(x)
-
-        pos_embed_module = PositionalEncoder(token_length=self.num_patches, output_dim=self.predictor_network_embedding_dim, n=10000, device=self.device)
-        pos_embedding_tensor = pos_embed_module()
-
-        x = x + pos_embedding_tensor
-
-        self.trained_predictor_transformer_blocks.eval()
-        x = self.trained_predictor_transformer_blocks(x)
 
         return x
 

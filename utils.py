@@ -127,13 +127,14 @@ def remove_old_models(N_models_to_keep, model_save_folder):
     return None
 
 
-def save_checkpoint(model_save_folder, model_name, encoder_network, predictor_network, target_encoder_network, optimizer, scaler, epoch, loss, N_models_to_keep, logger=None):
+def save_checkpoint(model_save_folder, model_name, encoder_network, optimizer, scaler, epoch, loss, N_models_to_keep, logger=None, predictor_network=None, target_encoder_network=None, downstream_network=None):
     '''Save model checkpoint.
     '''
     save_dict = {
                 'encoder_network': encoder_network.state_dict(),
-                'predictor_network': predictor_network.state_dict(),
-                'target_encoder_network': target_encoder_network.state_dict(),
+                'predictor_network': predictor_network.state_dict() if predictor_network is not None else None,
+                'target_encoder_network': target_encoder_network.state_dict() if target_encoder_network is not None else None,
+                'downstream_network': downstream_network.state_dict() if downstream_network is not None else None,
                 'optimizer': optimizer,
                 'scaler': scaler, 
                 'epoch': epoch, #useful for resuming training from the last epoch.
@@ -199,7 +200,7 @@ def load_checkpoint(model_save_folder, model_name, encoder_network, predictor_ne
 
             
 
-def load_checkpoint_downstream(trained_model_folder, trained_model_name, encoder_network, predictor_network, load_checkpoint_epoch=None, strict=False, logger=None):
+def load_encoder_checkpoint_downstream(trained_model_folder, trained_model_name, encoder_network, load_checkpoint_epoch=None, strict=False, logger=None):
     '''Loads either the latest model (if load_checkpoint_val is None) or loads the specific checkpoint.
     '''
 
@@ -214,17 +215,13 @@ def load_checkpoint_downstream(trained_model_folder, trained_model_name, encoder
         msg = encoder_network.load_state_dict(checkpoint['encoder_network'], strict=strict)
         logger.info(f"Loaded pretrained encoder network with msg: {msg}")
 
-        msg = predictor_network.load_state_dict(checkpoint['predictor_network'], strict=strict)
-        logger.info(f"Loaded pretrained predictor network with msg: {msg}")
 
 
-
-    
     except Exception as err:
         logger.error(f"Error loading the model! {err}")
         
 
-    return encoder_network, predictor_network
+    return encoder_network
 
 
 

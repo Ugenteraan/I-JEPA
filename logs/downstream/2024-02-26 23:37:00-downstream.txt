@@ -1,0 +1,2 @@
+26-02-2024 23:37:59:[INFO]:__main__:downstream:130 - Init Encoder model... - [0:00:05.175744]
+26-02-2024 23:37:59:[INFO]:utils:load_encoder_checkpoint_downstream:216 - Loaded pretrained encoder network with msg: <All keys matched successfully> - [0:00:05.440434]

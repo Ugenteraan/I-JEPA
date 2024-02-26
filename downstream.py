@@ -16,13 +16,12 @@ from torchvision import transforms
 from torch.utils.data import Dataset, dataset, DataLoader
 
 
-from models.downstream_vit import VisionTransformerForPredictor as vitpredictor
 from models.downstream_vit import VisionTransformerForEncoder as vitencoder
-from models.downstream_vit import TrainedEncoderPredictor
 from models.downstream_vit import DownstreamHead
+from models.downstream_vit import TrainedEncoder
 
 
-from utils import load_checkpoint_downstream, calculate_accuracy
+from utils import load_encoder_checkpoint_downstream, calculate_accuracy, save_checkpoint
 from load_dataset import LoadLabelledDataset
 import cred
 
@@ -86,6 +85,7 @@ def downstream(args):
     #Model configurations
     PATCH_SIZE = config['model']['patch_size']
     TRAINED_ENCODER_PREDICTOR_SAVED_FOLDER = config['model']['trained_encoder_predictor_saved_folder']
+    N_SAVED_MODEL_TO_KEEP = config['model']['N_saved_model_to_keep']
     MODEL_SAVE_FOLDER = config['model']['model_save_folder']
     MODEL_NAME = config['model']['model_name']
     TRAINED_ENCODER_PREDICTOR_MODEL_NAME = config['model']['trained_encoder_predictor_model_name']
@@ -143,24 +143,12 @@ def downstream(args):
 
     
     
-    logger.info("Init Predictor model...")
-    PREDICTOR_NETWORK = vitpredictor(input_dim=ENCODER_NETWORK_EMBEDDING_DIM, #the input dim for the predictor network is the output dim from the encoder network.
-                            predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
-                            device=DEVICE,
-                            transformer_network_depth=TRANSFORMER_DEPTH,
-                            projection_keys_dim=PROJECTION_KEYS_DIM,
-                            projection_values_dim=PROJECTION_VALUES_DIM,
-                            num_heads=NUM_HEADS,
-                            attn_dropout_prob=ATTN_DROPOUT_PROB,
-                            feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
-                            feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
 
 
     #REMEMBER WE DO NOT NEED THE TARGET ENCODER IN THIS MODULE.
     #Make sure the checkpoints are placed at the appropriate location.
     #We will load the model as is first before performing any changes for the downstream task.
-    ENCODER_NETWORK, PREDICTOR_NETWORK = load_checkpoint_downstream(encoder_network=ENCODER_NETWORK,
-                                                                    predictor_network=PREDICTOR_NETWORK,
+    ENCODER_NETWORK = load_encoder_checkpoint_downstream(encoder_network=ENCODER_NETWORK,
                                                                     trained_model_folder=TRAINED_ENCODER_PREDICTOR_SAVED_FOLDER,
                                                                     trained_model_name=TRAINED_ENCODER_PREDICTOR_MODEL_NAME,
                                                                     load_checkpoint_epoch=None, 
@@ -169,28 +157,24 @@ def downstream(args):
 
 
 
+    TRAINED_ENCODER_NETWORK = TrainedEncoder(trained_encoder=ENCODER_NETWORK, 
+                                             encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
+                                             device=DEVICE, 
+                                             logger=logger)
 
-
-    TRAINED_ENCODER_PREDICTOR_NETWORK = TrainedEncoderPredictor(trained_encoder=ENCODER_NETWORK,
-                                                                trained_predictor=PREDICTOR_NETWORK,
-                                                                num_patches=NUM_PATCHES,
-                                                                predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
-                                                                device=DEVICE,
-                                                                logger=logger)
 
     #set the mode to eval.
-    TRAINED_ENCODER_PREDICTOR_NETWORK.eval()
+    TRAINED_ENCODER_NETWORK.eval()
 
-    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM,
+    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM,
                                              classification_embedding_dim=CLASSIFICATION_EMBEDDING_DIM,
                                              num_class=NUM_CLASS,
                                              device=DEVICE,
                                              logger=logger)
 
+    summary(TRAINED_ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
 
-    summary(TRAINED_ENCODER_PREDICTOR_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
-
-    summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(PREDICTOR_NETWORK_EMBEDDING_DIM)))
+    summary(DOWNSTREAM_HEAD_NETWORK, (int(NUM_PATCHES), int(ENCODER_NETWORK_EMBEDDING_DIM)))
 
 
     #------------------------ Transforms settings.
@@ -253,7 +237,7 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
+                feature_embedding = TRAINED_ENCODER_NETWORK(batch_x)
                 prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)
@@ -295,7 +279,7 @@ def downstream(args):
                 batch_x, batch_y = data['image'].to(DEVICE), data['label'].to(DEVICE)
 
 
-                feature_embedding = TRAINED_ENCODER_PREDICTOR_NETWORK(batch_x)
+                feature_embedding = TRAINED_ENCODER_NETWORK(batch_x)
                 prediction = DOWNSTREAM_HEAD_NETWORK(feature_embedding)
 
                 batch_loss = CRITERION(input=prediction, target=batch_y)
@@ -318,6 +302,21 @@ def downstream(args):
             NEPTUNE_RUN['test/loss_per_epoch'].append(test_epoch_loss)
             NEPTUNE_RUN['test/accuracy_per_epoch'].append(test_epoch_accuracy)
 
+
+        #save checkpoints as per defined in the model save frequency (epoch).
+        if epoch_idx % MODEL_SAVE_FREQ == 0:
+            
+            #save the predictor network
+            save_checkpoint(model_save_folder=MODEL_SAVE_FOLDER, 
+                            model_name=MODEL_NAME, 
+                            encoder_network=ENCODER_NETWORK, 
+                            downstream_network=DOWNSTREAM_HEAD_NETWORK,
+                            optimizer=OPTIMIZER, 
+                            scaler=SCALER, 
+                            epoch=epoch_idx, 
+                            loss=loss,
+                            N_models_to_keep=N_SAVED_MODEL_TO_KEEP,
+                            logger=logger)
 
 
 
