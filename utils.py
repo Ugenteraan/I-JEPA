@@ -232,10 +232,13 @@ def calculate_accuracy(predicted, target):
 
     num_data = target.size()[0]
     predicted = torch.argmax(predicted, dim=1)
+    
 
     correct_pred = torch.sum(predicted == target)
+    
 
-    accuracy = correct_pred*(num_data/100)
+    accuracy = (correct_pred/num_data) * 100 #in percentage (0% - 100%)
+    
 
     return accuracy.item()
 

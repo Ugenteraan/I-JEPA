@@ -1,7 +1,7 @@
 #Configurations
 env: development
 data:
-  batch_size: 2
+  batch_size: 256
   image_size: 224
   image_depth: 3
   dataset_folder: "./dog_breed_classification/downstream/"
@@ -32,7 +32,7 @@ model:
   transformer_depth: 10
   encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
   predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
-  classification_embedding_dim: 2048
+  classification_embedding_dim: 1024
   projection_keys_dim : 256
   projection_values_dim : 256
   num_class: 77
@@ -47,7 +47,7 @@ training:
   load_checkpoint_epoch: null
   start_epoch : 0
   end_epoch : 30
-  learning_rate : 1.0e-5
+  learning_rate : 1.0e-3
   use_bfloat16: true
   use_neptune: true
 

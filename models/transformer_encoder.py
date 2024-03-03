@@ -15,7 +15,7 @@ class TransformerEncoderBlock(nn.Module):
     '''
 
 
-    def __init__(self, input_dim, projection_keys_dim, projection_values_dim, num_heads, attn_dropout_prob, feedforward_projection_dim, feedforward_dropout_prob, device):
+    def __init__(self, input_dim, projection_keys_dim, projection_values_dim, num_heads, attn_dropout_prob, mlp_ratio, mlp_dropout_prob, device):
 
         super(TransformerEncoderBlock, self).__init__()
 
@@ -33,8 +33,8 @@ class TransformerEncoderBlock(nn.Module):
         self.feedforward_block = nn.Sequential(
                                                 nn.LayerNorm(input_dim),
                                                 FeedForwardEncoderBlock(input_dim=input_dim,
-                                                                        feedforward_projection_dim=feedforward_projection_dim,
-                                                                        feedforward_dropout_prob=feedforward_dropout_prob).to(device)
+                                                                        mlp_ratio=mlp_ratio,
+                                                                        mlp_dropout_prob=mlp_dropout_prob).to(device)
                                                 )
         
 

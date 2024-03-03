@@ -115,7 +115,7 @@ class TrainedEncoder(nn.Module):
     '''In this module, we add positional embeddings to the encoder as they are not included in the saved .pth file.
     '''
 
-    def __init__(self, trained_encoder, encoder_network_embedding_dim, device='cpu', logger=None):
+    def __init__(self, trained_encoder, device='cpu', logger=None):
 
         super(TrainedEncoder, self).__init__()
 
@@ -126,7 +126,6 @@ class TrainedEncoder(nn.Module):
         self.trained_patch_embed_encoder = list(trained_encoder.children())[0]
         self.trained_encoder_transformer_blocks = torch.nn.Sequential(*list(trained_encoder.children())[1:])
 
-        self.encoder_network_embedding_dim = encoder_network_embedding_dim
         self.device = device
         
 
@@ -171,21 +170,41 @@ class DownstreamHead(nn.Module):
     '''This module is the replacement for the head that was taken away in the predictor's network.
     '''
 
-    def __init__(self, predictor_network_embedding_dim, classification_embedding_dim, num_class=77, device='cpu', logger=None):
+    def __init__(self, encoder_network_embedding_dim, classification_embedding_dim, num_class=77, device='cpu', logger=None, init_std=0.02):
 
         super(DownstreamHead, self).__init__()
 
-    
+        
+        self.init_std = init_std
         self.device = device
         
 
         #new classification head to be trained.
         
         self.classification_head = nn.Sequential(einops_torch.Reduce('b n e -> b e', reduction='mean'),
-                                                 nn.LayerNorm(predictor_network_embedding_dim),
-                                                 nn.Linear(predictor_network_embedding_dim, classification_embedding_dim),
+                                                 nn.LayerNorm(encoder_network_embedding_dim),
+                                                 nn.Linear(encoder_network_embedding_dim, classification_embedding_dim),
                                                  nn.GELU(),
                                                  nn.Linear(classification_embedding_dim, num_class)).to(self.device)
+
+        self.apply(self._init_weights_)
+
+    def _init_weights_(self, m):
+        '''Weight init using truncated normal distribution: https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
+        '''
+
+        if isinstance(m, nn.Linear):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            torch.nn.init.trunc_normal_(m.weight, std=self.init_std)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
 
     def forward(self, x):
 

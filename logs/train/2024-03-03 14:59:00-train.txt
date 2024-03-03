@@ -1,0 +1,2 @@
+03-03-2024 14:59:36:[INFO]:__main__:train:174 - Init Encoder model... - [0:00:05.173302]
+03-03-2024 14:59:37:[INFO]:__main__:train:190 - Init Predictor model... - [0:00:06.097002]

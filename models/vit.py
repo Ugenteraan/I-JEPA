@@ -37,7 +37,7 @@ class VisionTransformerForPredictor(nn.Module):
 
 
         #apply layernorm on the output of the transformer blocks.
-        self.final_layernorm = nn.LayerNorm(input_dim).to(device)
+        self.final_layernorm = nn.LayerNorm(self.predictor_network_embedding_dim).to(device)
 
         self.predictor_projector = nn.Linear(self.predictor_network_embedding_dim, input_dim).to(device) 
 

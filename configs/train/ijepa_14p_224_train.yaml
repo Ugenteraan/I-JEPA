@@ -1,7 +1,7 @@
 #Configurations
 env: development
 data:
-  batch_size: 32
+  batch_size: 16
   image_size: 224
   image_depth: 3
   dataset_folder: "./dog_breed_classification/ssl_train/"
@@ -41,22 +41,42 @@ model:
   model_save_freq: 2 #save every N epoch.
   N_saved_model_to_keep: 20 #keep the last N number of saved models and delete the earlier ones.
   model_name: i-jepa-dog-breed
-  transformer_depth: 10
-  encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
-  predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
-  projection_keys_dim : 256
-  projection_values_dim : 256
-  feedforward_projection_dim : 1024 
-  num_heads : 8
-  attn_dropout_prob : 0.1
-  feedforward_dropout_prob : 0.1
+  predictor:
+    depth: 6
+    embedding_dim: 384
+    projection_keys_dim: 384
+    projection_values_dim: 384
+    mlp_ratio: 4
+    num_heads: 8
+    attn_dropout_prob: 0.1
+    mlp_dropout_prob: 0.1
+  encoder:
+    depth: 12
+    embedding_dim: 1024
+    projection_keys_dim: 1024
+    projection_values_dim: 1024
+    mlp_ratio: 4
+    num_heads: 8
+    attn_dropout_prob: 0.1
+    mlp_dropout_prob: 0.1
+    
+
+  # transformer_depth: 10
+  # encoder_network_embedding_dim: 2048 #embedding dimension to be used throughout the transformer blocks in the encoder network.
+  # predictor_network_embedding_dim: 2048 #embedding dimension to be used throughout the transformer blocks in the predictor network.
+  # projection_keys_dim : 512
+  # projection_values_dim : 512
+  # feedforward_projection_dim : 2048 
+  # num_heads : 8
+  # attn_dropout_prob : 0.2
+  # feedforward_dropout_prob : 0.2
 
 training:
   device : gpu
   load_checkpoint: true
   load_checkpoint_epoch: null
   start_epoch : 0
-  end_epoch : 1000
+  end_epoch : 200
   ema: 
     - 0.995
     - 1.0

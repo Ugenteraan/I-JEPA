@@ -98,20 +98,44 @@ def train(args):
     CONTEXT_MASK_SCALE = config['mask']['context_mask_scale']
     MIN_MASK_LENGTH = config['mask']['min_mask_length']
 
-    #Model configurations
+    ####### Model configurations
     MODEL_SAVE_FOLDER = config['model']['model_save_folder']
     MODEL_NAME = config['model']['model_name']
     MODEL_SAVE_FREQ = config['model']['model_save_freq']
     N_SAVED_MODEL_TO_KEEP = config['model']['N_saved_model_to_keep']
-    TRANSFORMER_DEPTH = config['model']['transformer_depth']
-    ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder_network_embedding_dim']
-    PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor_network_embedding_dim']
-    PROJECTION_KEYS_DIM = config['model']['projection_keys_dim']
-    PROJECTION_VALUES_DIM = config['model']['projection_values_dim']
-    FEEDFORWARD_PROJECTION_DIM = config['model']['feedforward_projection_dim']
-    NUM_HEADS = config['model']['num_heads']
-    ATTN_DROPOUT_PROB = config['model']['attn_dropout_prob']
-    FEEDFORWARD_DROPOUT_PROB = config['model']['feedforward_dropout_prob']
+
+    #Encoder Configurations
+    ENCODER_DEPTH = config['model']['encoder']['depth']
+    ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder']['embedding_dim']
+    ENCODER_PROJECTION_KEYS_DIM = config['model']['encoder']['projection_keys_dim']
+    ENCODER_PROJECTION_VALUES_DIM = config['model']['encoder']['projection_values_dim']
+    ENCODER_MLP_RATIO = config['model']['encoder']['mlp_ratio']
+    ENCODER_NUM_HEADS = config['model']['encoder']['num_heads']
+    ENCODER_ATTN_DROPOUT_PROB = config['model']['encoder']['attn_dropout_prob']
+    ENCODER_MLP_DROPOUT_PROB = config['model']['encoder']['mlp_dropout_prob']
+
+    #Predictor Configurations
+    PREDICTOR_DEPTH = config['model']['predictor']['depth']
+    PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor']['embedding_dim']
+    PREDICTOR_PROJECTION_KEYS_DIM = config['model']['predictor']['projection_keys_dim']
+    PREDICTOR_PROJECTION_VALUES_DIM = config['model']['predictor']['projection_values_dim']
+    PREDICTOR_MLP_RATIO = config['model']['predictor']['mlp_ratio']
+    PREDICTOR_NUM_HEADS = config['model']['predictor']['num_heads']
+    PREDICTOR_ATTN_DROPOUT_PROB = config['model']['predictor']['attn_dropout_prob']
+    PREDICTOR_MLP_DROPOUT_PROB = config['model']['predictor']['mlp_dropout_prob']
+
+
+
+
+    # TRANSFORMER_DEPTH = config['model']['transformer_depth']
+    # ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder_network_embedding_dim']
+    # PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor_network_embedding_dim']
+    # PROJECTION_KEYS_DIM = config['model']['projection_keys_dim']
+    # PROJECTION_VALUES_DIM = config['model']['projection_values_dim']
+    # FEEDFORWARD_PROJECTION_DIM = config['model']['feedforward_projection_dim']
+    # NUM_HEADS = config['model']['num_heads']
+    # ATTN_DROPOUT_PROB = config['model']['attn_dropout_prob']
+    # FEEDFORWARD_DROPOUT_PROB = config['model']['feedforward_dropout_prob']
 
     #Training configurations
     DEVICE = config['training']['device']
@@ -153,13 +177,13 @@ def train(args):
                          image_depth=IMAGE_DEPTH, 
                          encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
                          device=DEVICE,
-                         transformer_network_depth=TRANSFORMER_DEPTH,
-                         projection_keys_dim=PROJECTION_KEYS_DIM,
-                         projection_values_dim=PROJECTION_VALUES_DIM,
-                         num_heads=NUM_HEADS,
-                         attn_dropout_prob=ATTN_DROPOUT_PROB,
-                         feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
-                         feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)  
+                         transformer_network_depth=ENCODER_DEPTH,
+                         projection_keys_dim=ENCODER_PROJECTION_KEYS_DIM,
+                         projection_values_dim=ENCODER_PROJECTION_VALUES_DIM,
+                         num_heads= ENCODER_NUM_HEADS,
+                         attn_dropout_prob= ENCODER_ATTN_DROPOUT_PROB,
+                         mlp_ratio=ENCODER_MLP_RATIO,
+                         mlp_dropout_prob=ENCODER_MLP_DROPOUT_PROB)  
 
     summary(ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
     
@@ -168,13 +192,13 @@ def train(args):
                             predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM, 
                             num_patches=NUM_PATCHES,
                             device=DEVICE,
-                            transformer_network_depth=TRANSFORMER_DEPTH,
-                            projection_keys_dim=PROJECTION_KEYS_DIM,
-                            projection_values_dim=PROJECTION_VALUES_DIM,
-                            num_heads=NUM_HEADS,
-                            attn_dropout_prob=ATTN_DROPOUT_PROB,
-                            feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
-                            feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
+                            transformer_network_depth=PREDICTOR_DEPTH,
+                            projection_keys_dim=PREDICTOR_PROJECTION_KEYS_DIM,
+                            projection_values_dim=PREDICTOR_PROJECTION_VALUES_DIM,
+                            num_heads=PREDICTOR_NUM_HEADS,
+                            attn_dropout_prob=PREDICTOR_ATTN_DROPOUT_PROB,
+                            mlp_ratio=PREDICTOR_MLP_RATIO,
+                            mlp_dropout_prob=PREDICTOR_MLP_DROPOUT_PROB)
 
 
     #to be used to generate the target embeddings. This network shares the same parameters as the encoder network.
@@ -358,7 +382,7 @@ def train(args):
                             optimizer=OPTIMIZER, 
                             scaler=SCALER, 
                             epoch=epoch_idx, 
-                            loss=loss,
+                            loss=epoch_loss,
                             N_models_to_keep=N_SAVED_MODEL_TO_KEEP,
                             logger=logger)
     

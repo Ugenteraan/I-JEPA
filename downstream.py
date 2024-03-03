@@ -158,7 +158,6 @@ def downstream(args):
 
 
     TRAINED_ENCODER_NETWORK = TrainedEncoder(trained_encoder=ENCODER_NETWORK, 
-                                             encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
                                              device=DEVICE, 
                                              logger=logger)
 
@@ -166,7 +165,7 @@ def downstream(args):
     #set the mode to eval.
     TRAINED_ENCODER_NETWORK.eval()
 
-    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(predictor_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM,
+    DOWNSTREAM_HEAD_NETWORK = DownstreamHead(encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM,
                                              classification_embedding_dim=CLASSIFICATION_EMBEDDING_DIM,
                                              num_class=NUM_CLASS,
                                              device=DEVICE,
@@ -250,7 +249,7 @@ def downstream(args):
                 SCALER.step(OPTIMIZER)
                 SCALER.update()
             else:
-                loss.backward()
+                batch_loss.backward()
                 OPTIMIZER.step()
 
             OPTIMIZER.zero_grad()
@@ -260,7 +259,7 @@ def downstream(args):
 
         train_epoch_accuracy = sum(train_epoch_accuracy)/(train_idx+1)
         logger.info(f"Train epoch loss at epoch {epoch_idx}: {train_epoch_loss}")
-        logger.info(f"Train epoch accuracy at epoch {epoch_idx}: {train_epoch_accuracy}")
+        logger.info(f"Train epoch accuracy at epoch {epoch_idx}: {train_epoch_accuracy:.2f}%")
 
 
         logger.info(f"Testing has started for epoch {epoch_idx}")
@@ -294,7 +293,7 @@ def downstream(args):
 
         test_epoch_accuracy = sum(test_epoch_accuracy)/(test_idx+1)
         logger.info(f"Test epoch loss at epoch {epoch_idx}: {test_epoch_loss}")
-        logger.info(f"Test epoch accuracy at epoch {epoch_idx}: {test_epoch_accuracy}")
+        logger.info(f"Test epoch accuracy at epoch {epoch_idx}: {test_epoch_accuracy:.2f}%")
 
         if USE_NEPTUNE:
             NEPTUNE_RUN['train/loss_per_epoch'].append(train_epoch_loss)
@@ -314,7 +313,7 @@ def downstream(args):
                             optimizer=OPTIMIZER, 
                             scaler=SCALER, 
                             epoch=epoch_idx, 
-                            loss=loss,
+                            loss=train_epoch_loss,
                             N_models_to_keep=N_SAVED_MODEL_TO_KEEP,
                             logger=logger)
 

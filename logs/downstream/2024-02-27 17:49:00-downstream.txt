@@ -1,0 +1,146 @@
+27-02-2024 17:49:18:[INFO]:__main__:downstream:130 - Init Encoder model... - [0:00:06.586148]
+27-02-2024 17:49:19:[ERROR]:utils:load_encoder_checkpoint_downstream:221 - Error loading the model! Error(s) in loading state_dict for VisionTransformerForEncoder:
+	size mismatch for patch_embed.patch_projection.weight: copying a param with shape torch.Size([512, 3, 14, 14]) from checkpoint, the shape in current model is torch.Size([2048, 3, 14, 14]).
+	size mismatch for patch_embed.patch_projection.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.0.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.0.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.1.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.1.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.2.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.2.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.3.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.3.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.4.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.4.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.5.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.5.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.6.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.6.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.7.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.7.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.8.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.8.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.Wq_Wk.weight: copying a param with shape torch.Size([512, 512]) from checkpoint, the shape in current model is torch.Size([1024, 2048]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.Wq_Wk.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([1024]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.Wv.weight: copying a param with shape torch.Size([256, 512]) from checkpoint, the shape in current model is torch.Size([512, 2048]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.Wv.bias: copying a param with shape torch.Size([256]) from checkpoint, the shape in current model is torch.Size([512]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.W_o.weight: copying a param with shape torch.Size([512, 256]) from checkpoint, the shape in current model is torch.Size([2048, 512]).
+	size mismatch for transformer_blocks.9.multi_head_attention_block.1.W_o.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.0.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.0.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.1.0.weight: copying a param with shape torch.Size([1024, 512]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.1.0.bias: copying a param with shape torch.Size([1024]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.1.3.weight: copying a param with shape torch.Size([512, 1024]) from checkpoint, the shape in current model is torch.Size([2048, 2048]).
+	size mismatch for transformer_blocks.9.feedforward_block.1.3.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for final_layernorm.weight: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]).
+	size mismatch for final_layernorm.bias: copying a param with shape torch.Size([512]) from checkpoint, the shape in current model is torch.Size([2048]). - [0:00:07.503488]

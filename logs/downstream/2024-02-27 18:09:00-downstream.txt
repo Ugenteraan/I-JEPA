@@ -1,0 +1,4 @@
+27-02-2024 18:09:26:[INFO]:__main__:downstream:130 - Init Encoder model... - [0:00:05.287606]
+27-02-2024 18:09:27:[INFO]:utils:load_encoder_checkpoint_downstream:216 - Loaded pretrained encoder network with msg: <All keys matched successfully> - [0:00:05.542553]
+27-02-2024 18:09:27:[INFO]:__main__:downstream:197 - Init dataset loading module... - [0:00:05.633034]
+27-02-2024 18:09:27:[INFO]:__main__:downstream:222 - Training has started for epoch 0 - [0:00:05.707065]
