@@ -62,7 +62,7 @@ class LoadUnlabelledDataset(Dataset):
         '''Returns a single image and its corresponding label.
         '''
 
-      if torch.is_tensor(idx):
+        if torch.is_tensor(idx):
             idx = idx.tolist()
 
         image_path = self.image_path[idx]
