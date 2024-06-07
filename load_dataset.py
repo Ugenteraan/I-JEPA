@@ -62,22 +62,16 @@ class LoadUnlabelledDataset(Dataset):
         '''Returns a single image and its corresponding label.
         '''
 
-        if torch.is_tensor(idx):
+      if torch.is_tensor(idx):
             idx = idx.tolist()
 
         image_path = self.image_path[idx]
 
-        if self.logger is not None:
-            self.logger.trace(f"Reading {image_path}...")
 
         try:
-            if self.image_depth == 1:
-                image = cv2.imread(image_path, 0)
-            else:
-                image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-            
-            #sometimes PIl throws truncated image error. Perhaps due to the image being too big? Hence the cv2 imread.
-            image = Image.fromarray(image)
+
+            image = Image.open(image_path).convert('RGB')
+
         except Exception as err:
             if self.logger is not None:
                 self.logger.error(f"{image_path}")

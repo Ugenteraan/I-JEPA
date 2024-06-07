@@ -103,12 +103,14 @@ def train(args):
     MODEL_NAME = config['model']['model_name']
     MODEL_SAVE_FREQ = config['model']['model_save_freq']
     N_SAVED_MODEL_TO_KEEP = config['model']['N_saved_model_to_keep']
-    TRANSFORMER_DEPTH = config['model']['transformer_depth']
+    ENCODER_TRANSFORMER_DEPTH = config['model']['encoder_transformer_depth']
+    PREDICTOR_TRANSFORMER_DEPTH = config['model']['predictor_transformer_depth']
     ENCODER_NETWORK_EMBEDDING_DIM = config['model']['encoder_network_embedding_dim']
     PREDICTOR_NETWORK_EMBEDDING_DIM = config['model']['predictor_network_embedding_dim']
     PROJECTION_KEYS_DIM = config['model']['projection_keys_dim']
     PROJECTION_VALUES_DIM = config['model']['projection_values_dim']
-    FEEDFORWARD_PROJECTION_DIM = config['model']['feedforward_projection_dim']
+    ENCODER_FEEDFORWARD_PROJECTION_DIM = config['model']['encoder_feedforward_projection_dim']
+    PREDICTOR_FEEDFORWARD_PROJECTION_DIM = config['model']['predictor_feedforward_projection_dim']
     NUM_HEADS = config['model']['num_heads']
     ATTN_DROPOUT_PROB = config['model']['attn_dropout_prob']
     FEEDFORWARD_DROPOUT_PROB = config['model']['feedforward_dropout_prob']
@@ -153,12 +155,12 @@ def train(args):
                          image_depth=IMAGE_DEPTH, 
                          encoder_network_embedding_dim=ENCODER_NETWORK_EMBEDDING_DIM, 
                          device=DEVICE,
-                         transformer_network_depth=TRANSFORMER_DEPTH,
+                         transformer_network_depth=ENCODER_TRANSFORMER_DEPTH,
                          projection_keys_dim=PROJECTION_KEYS_DIM,
                          projection_values_dim=PROJECTION_VALUES_DIM,
                          num_heads=NUM_HEADS,
                          attn_dropout_prob=ATTN_DROPOUT_PROB,
-                         feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
+                         feedforward_projection_dim=ENCODER_FEEDFORWARD_PROJECTION_DIM,
                          feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)  
 
     summary(ENCODER_NETWORK, (IMAGE_DEPTH, IMAGE_SIZE, IMAGE_SIZE))
@@ -168,12 +170,12 @@ def train(args):
                             predictor_network_embedding_dim=PREDICTOR_NETWORK_EMBEDDING_DIM, 
                             num_patches=NUM_PATCHES,
                             device=DEVICE,
-                            transformer_network_depth=TRANSFORMER_DEPTH,
+                            transformer_network_depth=PREDICTOR_TRANSFORMER_DEPTH,
                             projection_keys_dim=PROJECTION_KEYS_DIM,
                             projection_values_dim=PROJECTION_VALUES_DIM,
                             num_heads=NUM_HEADS,
                             attn_dropout_prob=ATTN_DROPOUT_PROB,
-                            feedforward_projection_dim=FEEDFORWARD_PROJECTION_DIM,
+                            feedforward_projection_dim=PREDICTOR_FEEDFORWARD_PROJECTION_DIM,
                             feedforward_dropout_prob=FEEDFORWARD_DROPOUT_PROB)
 
 
@@ -266,6 +268,7 @@ def train(args):
         epoch_loss = 0
 
         for idx, data in tqdm(enumerate(DATASET_LOADER)):
+
 
             images = data['collated_batch_data_images'].to(DEVICE)
 

@@ -1,0 +1,8 @@
+07-06-2024 17:07:04:[INFO]:__main__:train:150 - Init Encoder model... - [0:00:05.082107]
+07-06-2024 17:07:04:[INFO]:__main__:train:166 - Init Predictor model... - [0:00:05.575409]
+07-06-2024 17:07:04:[INFO]:__main__:train:185 - Init MultiBlockMaskCollator module... - [0:00:05.630642]
+07-06-2024 17:07:04:[INFO]:__main__:train:211 - Init local dataset loading module... - [0:00:05.631919]
+07-06-2024 17:07:05:[INFO]:__main__:train:221 - Dataloader is loaded! Total iteration per epoch: 12077 - [0:00:06.706517]
+07-06-2024 17:07:05:[ERROR]:utils:load_checkpoint:193 - Error loading the model! [Errno 2] No such file or directory: './artifacts/train/i-jepa-dog-breed-latest.pth.tar' - [0:00:06.707725]
+07-06-2024 17:07:05:[INFO]:__main__:train:261 - Total data to train the SSL model: 386444 - [0:00:06.708175]
+07-06-2024 17:07:05:[INFO]:__main__:train:264 - Training has started for epoch 0 - [0:00:06.708230]

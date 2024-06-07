@@ -92,6 +92,10 @@ class InitOptimWithSGDR:
             new_lr = max(self.cosine_lower_bound_lr, self.cosine_annealing(start_value=self.cosine_lower_bound_lr,
                                                                            end_value=self.cosine_upper_bound_lr,
                                                                            fraction_term=fraction_term))
+
+            #once the learning rate reaches the lower bound, restart the learning rate back to the upper bound value.
+            if new_lr == self.cosine_lower_bound_lr:
+                self.step_counter += self.num_steps_to_restart_lr
         
         #calculate the weight decay rate. There is no warmup period for decay rate and we will be using the same num of steps we used for lr for the restart.
         fraction_term = self.step_counter / self.num_steps_to_restart_lr

@@ -1,10 +1,10 @@
 #Configurations
 env: development
 data:
-  batch_size: 32
+  batch_size: 128
   image_size: 224
   image_depth: 3
-  dataset_folder: "./dog_breed_classification/ssl_train/"
+  dataset_folder: /home/topiary/Projects/Masked-AutoEncoder-PyTorch/dataset/dog_breed_classification/ssl_train/
   num_workers: 8
   shuffle: true
   use_random_horizontal_flip: true
@@ -41,12 +41,14 @@ model:
   model_save_freq: 2 #save every N epoch.
   N_saved_model_to_keep: 20 #keep the last N number of saved models and delete the earlier ones.
   model_name: i-jepa-dog-breed
-  transformer_depth: 10
-  encoder_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the encoder network.
-  predictor_network_embedding_dim: 512 #embedding dimension to be used throughout the transformer blocks in the predictor network.
+  encoder_transformer_depth: 10
+  predictor_transformer_depth: 6
+  encoder_network_embedding_dim: 1024 #embedding dimension to be used throughout the transformer blocks in the encoder network.
+  predictor_network_embedding_dim: 384 #embedding dimension to be used throughout the transformer blocks in the predictor network.
   projection_keys_dim : 256
   projection_values_dim : 256
-  feedforward_projection_dim : 1024 
+  encoder_feedforward_projection_dim : 1024 
+  predictor_feedforward_projection_dim: 512
   num_heads : 8
   attn_dropout_prob : 0.1
   feedforward_dropout_prob : 0.1
@@ -60,7 +62,7 @@ training:
   ema: 
     - 0.995
     - 1.0
-  cosine_upper_bound_lr : 5.0e-5
+  cosine_upper_bound_lr : 1.0e-4
   cosine_lower_bound_lr : 1.0e-6
   cosine_upper_bound_wd : 0.4
   cosine_lower_bound_wd : 0.04
